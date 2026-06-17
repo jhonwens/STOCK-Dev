@@ -1,0 +1,31 @@
+# 会员等级定义
+
+tiers:
+  - id: free
+    name: "免费版"
+    price_monthly: 0
+    price_yearly: 0
+    features:
+      - "持仓 ≤ 5 只"
+      - "自选股 ≤ 10 只"
+      - "基础 AI 分析"
+      - "MD 导出受限"
+  - id: pro
+    name: "专业版"
+    price_monthly: 39
+    price_yearly: 399
+    features:
+      - "持仓 ≤ 50 只"
+      - "自选股 ≤ 100 只"
+      - "完整 AI 分析"
+      - "MD 报告导出"
+      - "12 维深度分析"
+  - id: vip
+    name: "至尊版"
+    price_monthly: 99
+    price_yearly: 999
+    features:
+      - "持仓/自选股不限"
+      - "全部 Pro 权益"
+      - "自定义策略"
+      - "高频预警"

@@ -1,0 +1,27 @@
+# A股股票分析配置文件
+
+database:
+  path: "../data/stock_data.db"
+
+scheduler:
+  enabled: true
+  time: "16:00"
+
+output_dir: "/Users/ws/Desktop/Project/A-share-Project/Resource/买入推送"
+
+alert:
+  enabled: true
+  rules:
+    change_pct_threshold: 5
+    fund_flow_threshold: 10000000
+    revenue_growth_threshold: 30
+    profit_growth_threshold: 50
+
+data_source:
+  realtime: "akshare"
+  finance: "akshare"
+  news: "eastmoney"
+
+notify:
+  enabled: true
+  console_output: true

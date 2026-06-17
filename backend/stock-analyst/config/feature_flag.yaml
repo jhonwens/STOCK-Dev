@@ -1,0 +1,22 @@
+# Feature Flag 配置 v1.0
+# 控制会员等级权益与默认行为
+
+version: "1.0"
+defaults:
+  tier: pro            # 开发期默认全开；正式发版改为 free
+  enable_ai: true
+  enable_export: true
+
+tiers:
+  free:
+    max_holdings: 5
+    max_watchlist: 10
+    export_pro_report: false
+  pro:
+    max_holdings: 50
+    max_watchlist: 100
+    export_pro_report: true
+  vip:
+    max_holdings: 9999
+    max_watchlist: 9999
+    export_pro_report: true

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nickl/tauri/packages/api/schema.json",
+  "productName": "衡势价值",
+  "version": "0.1.0",
+  "identifier": "com.hengshi-value.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [{
+      "title": "衡势价值",
+      "width": 1280,
+      "height": 800,
+      "minWidth": 1024,
+      "minHeight": 600
+    }]
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}

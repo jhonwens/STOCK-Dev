@@ -1,0 +1,9 @@
+# 内置测试激活码
+
+| 等级 | 天数 | 激活码 |
+|------|------|--------|
+| FREE | 365 | HSP-FREE-K0KN-QNPL-BKQB-7993 |
+| PRO | 365 | HSP-PRO-ZZQ2-POC7-0X0B-7940 |
+| VIP | 365 | HSP-VIP-FPS6-WRHN-2WNW-4999 |
+| PRO | 30 | HSP-PRO-NHRH-GVC2-K8JS-C819 |
+| VIP | 3650 | HSP-VIP-DKQN-JX9W-VOUP-44E3 |

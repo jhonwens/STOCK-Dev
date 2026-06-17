@@ -1,0 +1,45 @@
+# 衡势价值 · 项目 .gitignore
+# 防止构建产物和临时文件入库
+
+# --- Rust / Tauri ---
+src-tauri/target/
+src-tauri/Cargo.lock.bak
+
+# --- Node / Vite ---
+node_modules/
+dist/
+.vite/
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# --- IDE / 编辑器 ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# --- 日志 / 临时 ---
+*.log
+*.tmp
+*.bak
+*.swp
+
+# --- 用户特定配置 ---
+*.local
+.env
+.env.local
