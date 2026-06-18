@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Iterator, Optional
 from pathlib import Path
 
 from backend.ai.skills import SkillRegistry
-from backend.ai.llm_client import LLMClient, load_llm_config
+from backend.ai.llm_client_v2 import LLMClientV2 as LLMClient
 
 
 @dataclass
