@@ -58,8 +58,13 @@ def search_stock(query: str) -> str:
 
 
 def analyze_stock(code: str) -> str:
-    """个股深度分析 - 复用 stock_insight.py（run_stock_insight.py 不存在）"""
-    return _run_script("stock_insight.py", code, timeout=120)
+    """个股深度分析 - 复用 stock_insight.py（run_stock_insight.py 不存在）
+
+    注意：stock_insight.py 用 argparse 定义参数：
+        parser.add_argument("--code", required=True)
+    所以必须用 --code 形参传，不能传位置参数。
+    """
+    return _run_script("stock_insight.py", "--code", code, timeout=120)
 
 
 def analyze_portfolio() -> str:
