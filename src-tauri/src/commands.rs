@@ -66,12 +66,14 @@ pub struct PortfolioStock {
     pub risk_level: String,
 }
 
-fn project_root() -> PathBuf {
+// ⚠️ Batch 2 Task 7 修订: db_path() 和 project_root() 改为 pub，
+// 以便 agent_commands.rs 和 agent_bridge.rs 复用
+pub fn project_root() -> PathBuf {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     manifest.parent().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."))
 }
 
-fn db_path() -> PathBuf {
+pub fn db_path() -> PathBuf {
     if let Ok(path) = std::env::var("STOCK_DB_PATH") {
         return PathBuf::from(path);
     }

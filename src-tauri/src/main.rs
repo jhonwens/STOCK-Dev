@@ -3,6 +3,10 @@
 mod commands;
 mod license;
 mod feature_flag;
+// ⚠️ Plan 修订 (Batch 2 #2): 这两个 mod 必须在 main.rs 顶部注册（不是 commands.rs）
+// 现有 main.rs 已有 mod commands; mod license; mod feature_flag;
+mod agent_commands;
+mod agent_bridge;
 
 fn main() {
     tauri::Builder::default()
@@ -44,6 +48,13 @@ fn main() {
             commands::activate_license,
             commands::deactivate_license,
             commands::get_license_info,
+            // 智能分析 Agent commands (Batch 2 Task 7)
+            agent_commands::agent_create_session,
+            agent_commands::agent_list_sessions,
+            agent_commands::agent_rename_session,
+            agent_commands::agent_delete_session,
+            agent_commands::agent_pin_session,
+            agent_commands::agent_get_messages,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
