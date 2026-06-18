@@ -425,9 +425,10 @@ class StockAgent:
                 messages=messages,
                 tools=self.skills.to_openai_tools(),
                 tool_choice="auto",
-                response_format={"type": "json_object"},  # 仅在最终回答时
             )
             # 解析 tool_calls 或最终回答
+            # 注意：ReAct 中间轮用纯文本+tools，最终回答用 Markdown
+            # 不使用 json_mode，因为 Markdown 含表格/代码块不适合 JSON
             ...
 ```
 
