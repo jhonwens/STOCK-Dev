@@ -30,18 +30,18 @@
   </defs>
 
   <!-- 圆角背景（参考 MD Editor: 边距 3-5%，圆角占 94%） -->
-  <rect x="3" y="3" width="94" height="94" rx="21" fill="url(#bg)"/>
+  <rect x="6" y="6" width="88" height="88" rx="19.5" fill="url(#bg)"/>
 
   <!-- 装饰：四角星点（缩进到背景内） -->
   <g fill="#fbbf24" opacity="0.5">
-    <circle cx="13" cy="13" r="0.6"/>
-    <circle cx="87" cy="15" r="0.5"/>
-    <circle cx="15" cy="87" r="0.5"/>
-    <circle cx="85" cy="85" r="0.6"/>
+    <circle cx="14" cy="14" r="0.5"/>
+    <circle cx="86" cy="16" r="0.4"/>
+    <circle cx="16" cy="86" r="0.4"/>
+    <circle cx="84" cy="84" r="0.5"/>
   </g>
 
-  <!-- 牛头：原大小 100%（不缩小，主体清晰可见） -->
-  <g transform="translate(50,52)">
+  <!-- 牛头：整体缩小 12%，居中 -->
+  <g transform="translate(50,52) scale(0.88)">
 
     <!-- 整体高光层 -->
     <ellipse cx="0" cy="0" rx="22" ry="20" fill="url(#shine)"/>
@@ -86,11 +86,11 @@
     <ellipse cx="14" cy="6" rx="3" ry="4" fill="#7c2d12" opacity="0.3"/>
   </g>
 
-  <!-- 底部装饰：装饰横线 + 衡势价值字样 -->
-  <g transform="translate(50,84)">
-    <line x1="-15" y1="0" x2="15" y2="0" stroke="#fbbf24" stroke-width="0.5" opacity="0.6"/>
-    <text x="0" y="5" text-anchor="middle"
+  <!-- 底部装饰：装饰横线 + 衡势价值字样（避开缩小后的牛头） -->
+  <g transform="translate(50,88)">
+    <line x1="-13" y1="0" x2="13" y2="0" stroke="#fbbf24" stroke-width="0.5" opacity="0.6"/>
+    <text x="0" y="4.5" text-anchor="middle"
           font-family="'KaiTi', 'STKaiti', '楷体', serif"
-          font-size="4" font-weight="700" fill="#fbbf24" letter-spacing="0.8">衡势价值</text>
+          font-size="3.5" font-weight="700" fill="#fbbf24" letter-spacing="0.6">衡势价值</text>
   </g>
 </svg>
