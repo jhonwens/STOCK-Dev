@@ -38,7 +38,13 @@ export default function Watchlist() {
             setRecommendation(p.data);
             setCacheTime(p.updated_at);
           }
-        } catch {}
+        } catch (e) {
+          // 旧缓存格式异常，尝试当作纯 JSON 解析
+          try {
+            const data = JSON.parse(res);
+            setRecommendation(data);
+          } catch {}
+        }
       }
     });
   }, []);
@@ -58,8 +64,9 @@ export default function Watchlist() {
           saveCandidateAnalysis(res).catch(() => {});
         }
       } catch (e) {
-        // LLM 返回非 JSON 文本（如"加仓"）时，展示原始内容而非崩溃
-        setError(`❌ LLM 返回格式异常: ${String(e).replace("SyntaxError: JSON Parse error: ", "").slice(0, 50)}`);
+        // 详细展示实际收到的内容（前 200 字符）
+        const preview = res.length > 200 ? res.slice(0, 200) + "..." : res;
+        setError(`❌ LLM 返回格式异常: ${String(e).replace("SyntaxError: JSON Parse error: ", "").slice(0, 30)}\n\n收到的内容（前200字符）:\n${preview}`);
       }
     } catch (e) {
       setError(String(e));

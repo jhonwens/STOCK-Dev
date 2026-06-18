@@ -8,10 +8,14 @@ import yaml
 from openai import OpenAI
 
 
-# 配置路径
+# 配置路径（使用 __file__ 推导，不依赖 cwd）
+# __file__ = backend/stock-analyst/scripts/llm_client.py
+# 需要 3 次 dirname 回到项目根 STOCK-Dev/
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR)))
 DEFAULT_CONFIG_PATHS = [
-    os.path.join(os.getcwd(), "config", "llm_config.json"),  # 新格式
-    os.path.join(os.getcwd(), "config", "llm_models.json"),  # 别名
+    os.path.join(_PROJECT_ROOT, "config", "llm_config.json"),  # 新格式
+    os.path.join(_PROJECT_ROOT, "config", "llm_models.json"),  # 别名
 ]
 
 
@@ -21,12 +25,12 @@ def _find_config_path():
         if os.path.exists(p):
             return p
     # 回退到旧路径
-    return os.path.join(os.getcwd(), "config", "llm_config.json")
+    return os.path.join(_PROJECT_ROOT, "config", "llm_config.json")
 
 
 def _legacy_single_config_path():
     """旧版单配置路径（用于迁移）"""
-    return os.path.join(os.getcwd(), "config", "llm_config.json")
+    return os.path.join(_PROJECT_ROOT, "config", "llm_config.json")
 
 
 class LLMClient:
