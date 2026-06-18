@@ -30,14 +30,14 @@ export default function Sidebar() {
             src="/src/assets/logo-64.png"
             alt="衡势价值"
             style={{
-              width: 24, height: 24,
+              width: 20, height: 20, flexShrink: 0,
             }}
           />
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "0.5px" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: "0.3px" }}>
               衡势价值
             </div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 0 }}>
               AI 股票分析
             </div>
           </div>
