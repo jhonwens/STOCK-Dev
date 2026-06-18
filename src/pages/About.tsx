@@ -27,7 +27,11 @@ export default function About() {
         color: "#fff", borderRadius: 16, padding: 32, marginBottom: 20,
         textAlign: "center",
       }}>
-        <div style={{ fontSize: 56, marginBottom: 8 }}>⚖️</div>
+        <img
+          src="/src/assets/logo-128.png"
+          alt="衡势价值"
+          style={{ width: 80, height: 80, borderRadius: 18, marginBottom: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}
+        />
         <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: 1 }}>衡势价值</div>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>
           AI 驱动的中长线价值投资助手

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  衡势价值 · Logo (浅色背景版本)
+  用于浅色背景下显示，整体配色为深色 + 金色
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bull-body-l" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="50%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="horn-l" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="ear-l" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 透明背景（无矩形填充） -->
+
+  <!-- 装饰星点 -->
+  <g fill="#b45309" opacity="0.4">
+    <circle cx="14" cy="14" r="0.6"/>
+    <circle cx="86" cy="18" r="0.5"/>
+    <circle cx="18" cy="86" r="0.5"/>
+    <circle cx="84" cy="84" r="0.6"/>
+  </g>
+
+  <!-- 牛头 -->
+  <g transform="translate(50,52)">
+    <!-- 左角 -->
+    <path d="M-22,-18 Q-32,-30 -30,-38 Q-26,-32 -18,-22 Z" fill="url(#horn-l)" stroke="#7c2d12" stroke-width="0.3"/>
+    <!-- 右角 -->
+    <path d="M22,-18 Q32,-30 30,-38 Q26,-32 18,-22 Z" fill="url(#horn-l)" stroke="#7c2d12" stroke-width="0.3"/>
+    <!-- 左耳 -->
+    <ellipse cx="-18" cy="-12" rx="6" ry="9" fill="url(#ear-l)" transform="rotate(-30 -18 -12)"/>
+    <!-- 右耳 -->
+    <ellipse cx="18" cy="-12" rx="6" ry="9" fill="url(#ear-l)" transform="rotate(30 18 -12)"/>
+    <!-- 头部主体 -->
+    <ellipse cx="0" cy="0" rx="22" ry="20" fill="url(#bull-body-l)" stroke="#7c2d12" stroke-width="0.3"/>
+    <!-- 额头分线 -->
+    <path d="M-8,-15 Q0,-12 8,-15" stroke="#7c2d12" stroke-width="0.4" fill="none" opacity="0.5"/>
+    <!-- 左眼 -->
+    <ellipse cx="-8" cy="-3" rx="2.5" ry="2.8" fill="#0f172a"/>
+    <ellipse cx="-7.5" cy="-4" rx="0.8" ry="1" fill="#fff" opacity="0.8"/>
+    <!-- 右眼 -->
+    <ellipse cx="8" cy="-3" rx="2.5" ry="2.8" fill="#0f172a"/>
+    <ellipse cx="8.5" cy="-4" rx="0.8" ry="1" fill="#fff" opacity="0.8"/>
+    <!-- 鼻 -->
+    <ellipse cx="0" cy="9" rx="9" ry="5.5" fill="#0f172a"/>
+    <!-- 鼻孔 -->
+    <ellipse cx="-3.5" cy="9" rx="1.2" ry="1.5" fill="#0f172a"/>
+    <ellipse cx="3.5" cy="9" rx="1.2" ry="1.5" fill="#0f172a"/>
+    <!-- 嘴 -->
+    <path d="M-4,14 Q0,15 4,14" stroke="#7c2d12" stroke-width="0.4" fill="none"/>
+  </g>
+
+  <!-- 底部装饰 -->
+  <g transform="translate(50,84)">
+    <line x1="-18" y1="0" x2="18" y2="0" stroke="#b45309" stroke-width="0.5" opacity="0.6"/>
+    <text x="0" y="6" text-anchor="middle"
+          font-family="'KaiTi', 'STKaiti', '楷体', serif"
+          font-size="4.5" font-weight="700" fill="#7c2d12" letter-spacing="1">衡势价值</text>
+  </g>
+</svg>

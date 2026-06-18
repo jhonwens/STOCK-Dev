@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  衡势价值 · Logo
+  Style: 候选 1 · 金色牛头（深蓝渐变背景）
+  Master SVG, 1024x1024, viewBox 0 0 100 100
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1024" height="1024">
+  <defs>
+    <!-- 背景渐变：深海军蓝 -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- 牛头主体：金色渐变 -->
+    <linearGradient id="bull-body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="50%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- 牛角：金到橙 -->
+    <linearGradient id="horn" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- 耳朵：深色 -->
+    <linearGradient id="ear" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+
+    <!-- 高光阴影 -->
+    <radialGradient id="shine" cx="35%" cy="30%" r="40%">
+      <stop offset="0%" stop-color="#fef9c3" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 圆角背景 -->
+  <rect width="100" height="100" rx="18" fill="url(#bg)"/>
+
+  <!-- 装饰：四角星点 -->
+  <g fill="#fbbf24" opacity="0.5">
+    <circle cx="14" cy="14" r="0.6"/>
+    <circle cx="86" cy="18" r="0.5"/>
+    <circle cx="18" cy="86" r="0.5"/>
+    <circle cx="84" cy="84" r="0.6"/>
+  </g>
+
+  <!-- 牛头 -->
+  <g transform="translate(50,52)">
+
+    <!-- 整体高光层（在最下面） -->
+    <ellipse cx="0" cy="0" rx="22" ry="20" fill="url(#shine)"/>
+
+    <!-- 左角 -->
+    <path d="M-22,-18 Q-32,-30 -30,-38 Q-26,-32 -18,-22 Z" fill="url(#horn)" stroke="#7c2d12" stroke-width="0.3"/>
+    <!-- 右角 -->
+    <path d="M22,-18 Q32,-30 30,-38 Q26,-32 18,-22 Z" fill="url(#horn)" stroke="#7c2d12" stroke-width="0.3"/>
+
+    <!-- 左耳 -->
+    <ellipse cx="-18" cy="-12" rx="6" ry="9" fill="url(#ear)" transform="rotate(-30 -18 -12)"/>
+    <!-- 右耳 -->
+    <ellipse cx="18" cy="-12" rx="6" ry="9" fill="url(#ear)" transform="rotate(30 18 -12)"/>
+
+    <!-- 头部主体 -->
+    <ellipse cx="0" cy="0" rx="22" ry="20" fill="url(#bull-body)" stroke="#7c2d12" stroke-width="0.3"/>
+
+    <!-- 头部细节：额头分线 -->
+    <path d="M-8,-15 Q0,-12 8,-15" stroke="#7c2d12" stroke-width="0.4" fill="none" opacity="0.5"/>
+
+    <!-- 左眼 -->
+    <ellipse cx="-8" cy="-3" rx="2.5" ry="2.8" fill="#0f172a"/>
+    <ellipse cx="-7.5" cy="-4" rx="0.8" ry="1" fill="#fff" opacity="0.8"/>
+    <!-- 右眼 -->
+    <ellipse cx="8" cy="-3" rx="2.5" ry="2.8" fill="#0f172a"/>
+    <ellipse cx="8.5" cy="-4" rx="0.8" ry="1" fill="#fff" opacity="0.8"/>
+
+    <!-- 鼻 -->
+    <ellipse cx="0" cy="9" rx="9" ry="5.5" fill="#0f172a"/>
+    <ellipse cx="0" cy="8.5" rx="9" ry="4" fill="#1e3a8a" opacity="0.6"/>
+    <!-- 鼻孔 -->
+    <ellipse cx="-3.5" cy="9" rx="1.2" ry="1.5" fill="#0f172a"/>
+    <ellipse cx="3.5" cy="9" rx="1.2" ry="1.5" fill="#0f172a"/>
+    <!-- 鼻梁高光 -->
+    <ellipse cx="0" cy="6" rx="1" ry="0.5" fill="#fbbf24" opacity="0.7"/>
+
+    <!-- 嘴部线条 -->
+    <path d="M-4,14 Q0,15 4,14" stroke="#7c2d12" stroke-width="0.4" fill="none"/>
+
+    <!-- 腮红阴影 -->
+    <ellipse cx="-14" cy="6" rx="3" ry="4" fill="#7c2d12" opacity="0.3"/>
+    <ellipse cx="14" cy="6" rx="3" ry="4" fill="#7c2d12" opacity="0.3"/>
+  </g>
+
+  <!-- 底部装饰：装饰横线 + 衡势价值字样 -->
+  <g transform="translate(50,84)">
+    <line x1="-18" y1="0" x2="18" y2="0" stroke="#fbbf24" stroke-width="0.5" opacity="0.6"/>
+    <text x="0" y="6" text-anchor="middle"
+          font-family="'KaiTi', 'STKaiti', '楷体', serif"
+          font-size="4.5" font-weight="700" fill="#fbbf24" letter-spacing="1">衡势价值</text>
+  </g>
+</svg>

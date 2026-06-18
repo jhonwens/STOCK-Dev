@@ -26,14 +26,14 @@ export default function Sidebar() {
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.08)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #5b8def, #7c5cfc)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 17, boxShadow: "0 2px 6px rgba(91,141,239,0.3)",
-          }}>
-            ⚖️
-          </div>
+          <img
+            src="/src/assets/logo-64.png"
+            alt="衡势价值"
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              boxShadow: "0 2px 6px rgba(91,141,239,0.3)",
+            }}
+          />
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "0.5px" }}>
               衡势价值

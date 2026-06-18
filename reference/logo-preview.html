@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>衡势价值 Logo 候选</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      background: #f5f5f7;
+      margin: 0;
+      padding: 40px 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 40px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .icon-box {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-box.lg {
+      width: 200px;
+      height: 200px;
+    }
+    .icon-box.xl {
+      width: 256px;
+      height: 256px;
+    }
+    .icon-box.sm {
+      width: 64px;
+      height: 64px;
+    }
+    .preview-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin: 16px 0;
+      padding: 16px;
+      background: #fafafa;
+      border-radius: 8px;
+    }
+    .preview-row.dark {
+      background: #1a1a1a;
+    }
+    .name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .desc {
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .stars {
+      text-align: center;
+      color: #f59e0b;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⚖️ 衡势价值 · Logo 候选</h1>
+  <p class="subtitle">6 个方向对比 · 包含明暗背景 + 不同尺寸预览</p>
+
+  <div class="grid">
+
+    <!-- 候选 1: 金色牛头 -->
+    <div class="card">
+      <div class="name">候选 1 · 金色牛头</div>
+      <div class="desc">经典券商 · 稳重专业</div>
+      <div class="icon-box xl">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e3a8a"/>
+              <stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="g1b" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#d97706"/>
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" rx="20" fill="url(#g1)"/>
+          <!-- 牛头轮廓 -->
+          <g transform="translate(50,55)">
+            <!-- 左角 -->
+            <path d="M-22,-18 Q-32,-30 -30,-38 Q-26,-32 -18,-22 Z" fill="url(#g1b)"/>
+            <!-- 右角 -->
+            <path d="M22,-18 Q32,-30 30,-38 Q26,-32 18,-22 Z" fill="url(#g1b)"/>
+            <!-- 头部 -->
+            <ellipse cx="0" cy="0" rx="22" ry="20" fill="url(#g1b)"/>
+            <!-- 左耳 -->
+            <ellipse cx="-18" cy="-12" rx="6" ry="9" fill="#b45309" transform="rotate(-30 -18 -12)"/>
+            <!-- 右耳 -->
+            <ellipse cx="18" cy="-12" rx="6" ry="9" fill="#b45309" transform="rotate(30 18 -12)"/>
+            <!-- 眼睛 -->
+            <circle cx="-7" cy="-3" r="2" fill="#1e3a8a"/>
+            <circle cx="7" cy="-3" r="2" fill="#1e3a8a"/>
+            <!-- 鼻 -->
+            <ellipse cx="0" cy="8" rx="8" ry="5" fill="#1e3a8a"/>
+            <circle cx="-3" cy="8" r="1" fill="#fbbf24"/>
+            <circle cx="3" cy="8" r="1" fill="#fbbf24"/>
+          </g>
+        </svg>
+      </div>
+      <div class="preview-row dark">
+        <div class="icon-box sm">
+          <svg viewBox="0 0 100 100"><use href="#"/></svg>
+        </div>
+        <span style="color:#fff;font-size:13px">小尺寸 64px</span>
+      </div>
+      <div class="stars">⭐⭐⭐⭐⭐ 易识别</div>
+    </div>
+
+    <!-- 候选 2: K线上升 -->
+    <div class="card">
+      <div class="name">候选 2 · K线上升</div>
+      <div class="desc">数据科技 · 价值投资感</div>
+      <div class="icon-box xl">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0ea5e9"/>
+              <stop offset="100%" stop-color="#1e40af"/>
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" rx="20" fill="url(#g2)"/>
+          <!-- K线 -->
+          <g fill="#fff">
+            <rect x="22" y="58" width="6" height="18" rx="1" opacity="0.6"/>
+            <rect x="20" y="62" width="10" height="10" rx="1" fill="#ef4444"/>
+            <line x1="25" y1="55" x2="25" y2="78" stroke="#ef4444" stroke-width="1.5"/>
+          </g>
+          <g fill="#fff">
+            <rect x="40" y="46" width="6" height="20" rx="1" opacity="0.6"/>
+            <rect x="38" y="50" width="10" height="12" rx="1" fill="#22c55e"/>
+            <line x1="43" y1="42" x2="43" y2="68" stroke="#22c55e" stroke-width="1.5"/>
+          </g>
+          <g fill="#fff">
+            <rect x="58" y="34" width="6" height="22" rx="1" opacity="0.6"/>
+            <rect x="56" y="38" width="10" height="14" rx="1" fill="#22c55e"/>
+            <line x1="61" y1="30" x2="61" y2="60" stroke="#22c55e" stroke-width="1.5"/>
+          </g>
+          <!-- 上升箭头 -->
+          <path d="M22,68 L40,54 L58,40 L78,22 M70,22 L78,22 L78,30"
+                stroke="#fbbf24" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="preview-row">
+        <div class="icon-box sm"></div>
+        <span style="color:#333;font-size:13px">小尺寸 64px</span>
+      </div>
+      <div class="stars">⭐⭐⭐⭐ 工具感强</div>
+    </div>
+
+    <!-- 候选 3: 动态剪影牛 -->
+    <div class="card">
+      <div class="name">候选 3 · 动态剪影</div>
+      <div class="desc">牛市势能 · 紫金渐变</div>
+      <div class="icon-box xl">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g3" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#581c87"/>
+              <stop offset="50%" stop-color="#a21caf"/>
+              <stop offset="100%" stop-color="#f59e0b"/>
+            </linearGradient>
+            <linearGradient id="g3b" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#dc2626"/>
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" rx="20" fill="url(#g3)"/>
+          <!-- 冲势牛 -->
+          <g transform="translate(50,55)">
+            <path d="M-30,15 L-25,-5 L-15,-12 L-5,-10 L0,-18 L8,-12 L20,-8 L28,5 L25,18 L15,20 L5,15 L-10,18 L-25,20 Z"
+                  fill="url(#g3b)" stroke="#fff" stroke-width="1.5"/>
+            <!-- 角 -->
+            <path d="M-5,-10 L-2,-22 L3,-15 Z" fill="#fff"/>
+            <path d="M-15,-12 L-22,-22 L-15,-15 Z" fill="#fff"/>
+            <!-- 眼睛 -->
+            <circle cx="-2" cy="-3" r="1.5" fill="#000"/>
+            <!-- 肌肉线条 -->
+            <path d="M5,5 Q10,2 12,8" stroke="#fff" stroke-width="1" fill="none" opacity="0.6"/>
+            <path d="M-15,5 Q-8,2 -5,8" stroke="#fff" stroke-width="1" fill="none" opacity="0.6"/>
+          </g>
+        </svg>
+      </div>
+      <div class="preview-row dark">
+        <div class="icon-box sm"></div>
+        <span style="color:#fff;font-size:13px">小尺寸 64px</span>
+      </div>
+      <div class="stars">⭐⭐⭐⭐ 势能感</div>
+    </div>
+
+    <!-- 候选 4: 中式天平 -->
+    <div class="card">
+      <div class="name">候选 4 · 中式天平</div>
+      <div class="desc">价值评估 · 红金配色</div>
+      <div class="icon-box xl">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#7f1d1d"/>
+              <stop offset="100%" stop-color="#450a0a"/>
+            </linearGradient>
+            <linearGradient id="g4b" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#fef3c7"/>
+              <stop offset="100%" stop-color="#d97706"/>
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" rx="20" fill="url(#g4)"/>
+          <!-- 天平 -->
+          <g stroke="url(#g4b)" stroke-width="2.5" fill="url(#g4b)" stroke-linecap="round">
+            <!-- 中心柱 -->
+            <line x1="50" y1="20" x2="50" y2="75" stroke-width="3"/>
+            <!-- 横梁 -->
+            <line x1="22" y1="28" x2="78" y2="28" stroke-width="2.5"/>
+            <!-- 顶部 -->
+            <circle cx="50" cy="20" r="3"/>
+            <!-- 左盘 -->
+            <line x1="22" y1="28" x2="22" y2="48" stroke-width="1.5"/>
+            <ellipse cx="22" cy="50" rx="14" ry="3" fill="url(#g4b)" stroke="none"/>
+            <!-- 右盘 -->
+            <line x1="78" y1="28" x2="78" y2="48" stroke-width="1.5"/>
+            <ellipse cx="78" cy="50" rx="14" ry="3" fill="url(#g4b)" stroke="none"/>
+            <!-- 底座 -->
+            <rect x="40" y="75" width="20" height="5" rx="2" fill="url(#g4b)" stroke="none"/>
+            <line x1="35" y1="80" x2="65" y2="80" stroke-width="2.5"/>
+          </g>
+          <!-- 牛角装饰 -->
+          <g fill="url(#g4b)" stroke="#7f1d1d" stroke-width="0.5">
+            <path d="M44,15 Q40,8 38,5 Q42,8 46,12 Z"/>
+            <path d="M56,15 Q60,8 62,5 Q58,8 54,12 Z"/>
+          </g>
+        </svg>
+      </div>
+      <div class="preview-row">
+        <div class="icon-box sm"></div>
+        <span style="color:#333;font-size:13px">小尺寸 64px</span>
+      </div>
+      <div class="stars">⭐⭐⭐ 中式辨识度</div>
+    </div>
+
+    <!-- 候选 5: 圆形蓝金徽章 -->
+    <div class="card">
+      <div class="name">候选 5 · 圆形蓝金</div>
+      <div class="desc">机构徽章 · 沉稳专业</div>
+      <div class="icon-box xl">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g5" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e3a8a"/>
+              <stop offset="100%" stop-color="#0c1e4e"/>
+            </linearGradient>
+            <radialGradient id="g5b" cx="50%" cy="40%">
+              <stop offset="0%" stop-color="#fde68a"/>
+              <stop offset="60%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#b45309"/>
+            </radialGradient>
+          </defs>
+          <rect width="100" height="100" rx="20" fill="url(#g5)"/>
+          <!-- 圆形徽章 -->
+          <circle cx="50" cy="50" r="32" fill="url(#g5b)" stroke="#fef3c7" stroke-width="1.5"/>
+          <circle cx="50" cy="50" r="27" fill="none" stroke="#7f1d1d" stroke-width="0.5" opacity="0.4"/>
+          <!-- 牛头 -->
+          <g transform="translate(50,55)">
+            <!-- 角 -->
+            <path d="M-15,-12 Q-22,-22 -20,-28 Q-17,-23 -11,-15 Z" fill="#7f1d1d"/>
+            <path d="M15,-12 Q22,-22 20,-28 Q17,-23 11,-15 Z" fill="#7f1d1d"/>
+            <!-- 头 -->
+            <ellipse cx="0" cy="0" rx="16" ry="15" fill="#7f1d1d"/>
+            <!-- 耳 -->
+            <ellipse cx="-12" cy="-8" rx="4" ry="6" fill="#7f1d1d" transform="rotate(-30 -12 -8)"/>
+            <ellipse cx="12" cy="-8" rx="4" ry="6" fill="#7f1d1d" transform="rotate(30 12 -8)"/>
+            <!-- 鼻 -->
+            <ellipse cx="0" cy="6" rx="6" ry="4" fill="#fef3c7"/>
+            <circle cx="-2" cy="6" r="1" fill="#7f1d1d"/>
+            <circle cx="2" cy="6" r="1" fill="#7f1d1d"/>
+          </g>
+          <!-- 围绕文字：衡势价值 -->
+          <path id="g5c" d="M 50,50 m -38,0 a 38,38 0 1,1 76,0" fill="none"/>
+          <text font-size="6" fill="#fef3c7" font-weight="bold">
+            <textPath href="#g5c" startOffset="10%">衡势价值 · HENGSHI VALUE</textPath>
+          </text>
+        </svg>
+      </div>
+      <div class="preview-row dark">
+        <div class="icon-box sm"></div>
+        <span style="color:#fff;font-size:13px">小尺寸 64px</span>
+      </div>
+      <div class="stars">⭐⭐⭐⭐⭐ 机构感</div>
+    </div>
+
+    <!-- 候选 6: 赛博朋克 -->
+    <div class="card">
+      <div class="name">候选 6 · 赛博朋克</div>
+      <div class="desc">科技未来 · 霓虹光晕</div>
+      <div class="icon-box xl">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g6" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0f172a"/>
+              <stop offset="100%" stop-color="#000000"/>
+            </linearGradient>
+            <filter id="glow6">
+              <feGaussianBlur stdDeviation="1.5"/>
+              <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <rect width="100" height="100" rx="20" fill="url(#g6)"/>
+          <!-- 网格 -->
+          <g stroke="#1e3a8a" stroke-width="0.3" opacity="0.3">
+            <line x1="0" y1="25" x2="100" y2="25"/>
+            <line x1="0" y1="50" x2="100" y2="50"/>
+            <line x1="0" y1="75" x2="100" y2="75"/>
+            <line x1="25" y1="0" x2="25" y2="100"/>
+            <line x1="50" y1="0" x2="50" y2="100"/>
+            <line x1="75" y1="0" x2="75" y2="100"/>
+          </g>
+          <!-- 线框牛头 -->
+          <g stroke="#06b6d4" stroke-width="2" fill="none" filter="url(#glow6)" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="50" cy="55" rx="20" ry="18"/>
+            <path d="M32,42 Q22,30 24,22 Q28,30 36,38"/>
+            <path d="M68,42 Q78,30 76,22 Q72,30 64,38"/>
+            <ellipse cx="40" cy="44" rx="5" ry="7" transform="rotate(-25 40 44)"/>
+            <ellipse cx="60" cy="44" rx="5" ry="7" transform="rotate(25 60 44)"/>
+            <circle cx="44" cy="52" r="1.5" fill="#06b6d4"/>
+            <circle cx="56" cy="52" r="1.5" fill="#06b6d4"/>
+            <ellipse cx="50" cy="62" rx="7" ry="4"/>
+            <path d="M35,68 L65,68" stroke="#22d3ee" stroke-width="1"/>
+          </g>
+          <!-- 霓虹点 -->
+          <g fill="#22d3ee" filter="url(#glow6)">
+            <circle cx="32" cy="42" r="1.5"/>
+            <circle cx="68" cy="42" r="1.5"/>
+          </g>
+        </svg>
+      </div>
+      <div class="preview-row dark">
+        <div class="icon-box sm"></div>
+        <span style="color:#fff;font-size:13px">小尺寸 64px</span>
+      </div>
+      <div class="stars">⭐⭐⭐⭐ 科技感</div>
+    </div>
+
+  </div>
+
+  <div style="text-align:center;margin-top:40px;color:#666;font-size:13px">
+    💡 提示：选中方向后我可以生成完整图标包（1024/512/256/128/64/32 多尺寸）并直接集成到 Tauri 项目
+  </div>
+
+</body>
+</html>
