@@ -108,7 +108,7 @@ def handle_request(req: dict) -> dict:
     m_repo = MessageRepository(db_path)
 
     if action == "session_create":
-        session = s_repo.create(kwargs.get("title", "新会话"))
+        session = s_repo.create(kwargs.get("title") or "新会话")
         return session
     elif action == "session_list":
         return s_repo.list()

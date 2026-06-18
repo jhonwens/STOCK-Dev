@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 // ⚠️ Plan 修订: Tauri 2.x 应使用 @tauri-apps/api/core（不是 /tauri）
 // 与现有 src/services/api.ts 保持一致
 import { invoke } from "@tauri-apps/api/core";
+import { UnlistenFn } from "@tauri-apps/api/event";
 import { sendMessage, AgentMessage, ToolCall as TCToolCall } from "../services/agent";
 import SessionList, { AgentSession } from "../components/agent/SessionList";
 import MessageList, { Message } from "../components/agent/MessageList";
@@ -14,6 +15,7 @@ export default function AIAgent() {
   const [loading, setLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [activeToolCalls, setActiveToolCalls] = useState<TCToolCall[]>([]);
+  const unlistenersRef = useRef<UnlistenFn[]>([]);
 
   useEffect(() => {
     loadSessions();
@@ -25,6 +27,14 @@ export default function AIAgent() {
     } else {
       setMessages([]);
     }
+  }, [currentSessionId]);
+
+  // 切会话/卸载时清理监听器，避免泄漏与重复触发
+  useEffect(() => {
+    return () => {
+      unlistenersRef.current.forEach((fn) => fn());
+      unlistenersRef.current = [];
+    };
   }, [currentSessionId]);
 
   async function loadSessions() {
@@ -86,8 +96,12 @@ export default function AIAgent() {
     };
     setMessages([...messages, tempUserMsg]);
 
+    // 清理上一轮 listener，避免重复触发
+    unlistenersRef.current.forEach((fn) => fn());
+    unlistenersRef.current = [];
+
     try {
-      await sendMessage(currentSessionId, text, {
+      const unlisteners = await sendMessage(currentSessionId, text, {
         onThinking: (step, content) => {
           console.log(`Step ${step}: ${content}`);
         },
@@ -110,6 +124,9 @@ export default function AIAgent() {
           alert(`Agent 错误: ${error}`);
         },
         onDone: async (_messageId) => {
+          // 完成后清理 listener
+          unlistenersRef.current.forEach((fn) => fn());
+          unlistenersRef.current = [];
           // 重新加载消息历史
           await loadMessages(currentSessionId);
           setStreamingContent("");
@@ -119,6 +136,7 @@ export default function AIAgent() {
           await loadSessions();
         },
       });
+      unlistenersRef.current = unlisteners;
     } catch (e) {
       console.error("Send failed:", e);
       setLoading(false);
