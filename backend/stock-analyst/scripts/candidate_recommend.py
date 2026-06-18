@@ -208,6 +208,78 @@ def main():
             top5.sort(key=lambda x: x.get("overall_score", 0), reverse=True)
             for i, stock in enumerate(top5):
                 stock["rank"] = i + 1
+
+        # 短期/长期互斥去重：优先保长期（长期更稳健）
+        if "short_term" in result and "long_term" in result:
+            long_codes = {s.get("code") for s in result["long_term"].get("top5", [])}
+            result["short_term"]["top5"] = [
+                s for s in result["short_term"]["top5"] if s.get("code") not in long_codes
+            ][:5]
+            # 重新分配 rank
+            for i, stock in enumerate(result["short_term"]["top5"]):
+                stock["rank"] = i + 1
+
+        # 短期不足 5 只时，从候选池随机补全（避免去重后短期变少）
+        short_count = len(result.get("short_term", {}).get("top5", []))
+        if short_count < 5 and "candidates" in data:
+            used_codes = {
+                s.get("code") for s in result.get("short_term", {}).get("top5", [])
+            } | {s.get("code") for s in result.get("long_term", {}).get("top5", [])}
+            # 从候选池里找补
+            for c in data.get("candidates", []):
+                code = c.get("code", "")
+                if code and code not in used_codes:
+                    used_codes.add(code)
+                    result["short_term"]["top5"].append({
+                        "rank": len(result["short_term"]["top5"]) + 1,
+                        "code": code,
+                        "name": c.get("name", ""),
+                        "overall_score": 70,  # 兜底分
+                        "recommend_reason": "候选池补全：因 AI 推荐去重后不足 5 只",
+                        "suggested_price_range": [0, 0],
+                        "risk_warning": "兜底推荐，请人工复核",
+                        "holding_period": "1-4周",
+                        "analysis_12dim": {}
+                    })
+                    if len(result["short_term"]["top5"]) >= 5:
+                        break
+
+        # 长期不足 5 只时同样补全
+        long_count = len(result.get("long_term", {}).get("top5", []))
+        if long_count < 5 and "candidates" in data:
+            used_codes = {
+                s.get("code") for s in result.get("long_term", {}).get("top5", [])
+            } | {s.get("code") for s in result.get("short_term", {}).get("top5", [])}
+            for c in data.get("candidates", []):
+                code = c.get("code", "")
+                if code and code not in used_codes:
+                    used_codes.add(code)
+                    result["long_term"]["top5"].append({
+                        "rank": len(result["long_term"]["top5"]) + 1,
+                        "code": code,
+                        "name": c.get("name", ""),
+                        "overall_score": 70,
+                        "recommend_reason": "候选池补全：因 AI 推荐去重后不足 5 只",
+                        "suggested_price_range": [0, 0],
+                        "risk_warning": "兜底推荐，请人工复核",
+                        "holding_period": "6-12个月",
+                        "analysis_12dim": {}
+                    })
+                    if len(result["long_term"]["top5"]) >= 5:
+                        break
+
+        # 校验 holding_period（短期 1-4 周，长期 6个月以上）
+        short_keywords = ["1-4周", "1-2周", "2-4周", "3-5周", "1个月", "短线", "周"]
+        long_keywords = ["6个月", "1年", "长期", "6-12", "1-3年", "2年", "3年"]
+        for s in result.get("short_term", {}).get("top5", []):
+            hp = s.get("holding_period", "")
+            if not any(k in hp for k in short_keywords):
+                s["holding_period"] = "1-4周"
+        for s in result.get("long_term", {}).get("top5", []):
+            hp = s.get("holding_period", "")
+            if not any(k in hp for k in long_keywords):
+                s["holding_period"] = "6-12个月"
+
         print(json.dumps(result, ensure_ascii=False))
     except json.JSONDecodeError as e:
         print(json.dumps({
