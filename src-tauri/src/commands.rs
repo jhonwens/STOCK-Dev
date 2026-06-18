@@ -422,30 +422,83 @@ pub async fn run_llm_analysis(scope: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn save_llm_config(url: String, api_key: String, model: String, temperature: f64) -> Result<String, String> {
-    let config_dir = project_root().join("config");
-    let config_path = config_dir.join("llm_config.json");
-    std::fs::create_dir_all(&config_dir).map_err(|e| {
-        format!("创建配置目录失败 ({}): {}", config_dir.display(), e)
-    })?;
-    let config = serde_json::json!({
+    // 向后兼容：转成单条 save_model（无 id，自动生成）
+    let payload = serde_json::json!({
+        "name": "默认模型",
+        "provider": "custom",
         "api_base": url,
         "api_key": api_key,
         "model": model,
         "temperature": temperature,
+        "enabled": true,
     });
-    std::fs::write(&config_path, serde_json::to_string_pretty(&config).map_err(|e| e.to_string())?)
-        .map_err(|e| format!("写入配置文件失败 ({}): {}", config_path.display(), e))?;
-    Ok(format!("✅ 配置已保存到 {}", config_path.display()))
+    call_llm_cli(&["save", &payload.to_string()])
 }
 
 #[tauri::command]
 pub fn load_llm_config() -> Result<String, String> {
-    let config_path = project_root().join("config").join("llm_config.json");
-    if !config_path.exists() {
-        return Ok("{}".to_string());
+    // 向后兼容：返回当前激活的单个模型
+    call_llm_cli(&["get-active"])
+}
+
+/// 通过 Python CLI 转发 LLM 配置命令
+fn call_llm_cli(args: &[&str]) -> Result<String, String> {
+    use std::process::Command;
+    let py = llm_python_path();
+    let cli = llm_cli_path();
+
+    let output = Command::new(&py)
+        .arg(&cli)
+        .args(args)
+        .output()
+        .map_err(|e| format!("调用 Python 失败 ({}): {}", py.display(), e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Python CLI 错误: {}", stderr.trim()));
     }
-    std::fs::read_to_string(&config_path)
-        .map_err(|e| format!("读取配置文件失败: {}", e))
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+fn llm_python_path() -> PathBuf {
+    if let Ok(p) = std::env::var("STOCK_PYTHON") {
+        return PathBuf::from(p);
+    }
+    PathBuf::from("python3")
+}
+
+fn llm_cli_path() -> PathBuf {
+    project_root()
+        .join("backend")
+        .join("stock-analyst")
+        .join("scripts")
+        .join("llm_config_cli.py")
+}
+
+// 多模型管理新命令
+#[tauri::command]
+pub fn list_llm_models() -> Result<String, String> {
+    call_llm_cli(&["list"])
+}
+
+#[tauri::command]
+pub fn save_llm_model(model_json: String) -> Result<String, String> {
+    call_llm_cli(&["save", &model_json])
+}
+
+#[tauri::command]
+pub fn delete_llm_model(model_id: String) -> Result<String, String> {
+    call_llm_cli(&["delete", &model_id])
+}
+
+#[tauri::command]
+pub fn set_active_llm_model(model_id: String) -> Result<String, String> {
+    call_llm_cli(&["set-active", &model_id])
+}
+
+#[tauri::command]
+pub fn test_llm_connection(api_base: String, api_key: String, model: String) -> Result<String, String> {
+    call_llm_cli(&["test", &api_base, &api_key, &model])
 }
 
 #[tauri::command]

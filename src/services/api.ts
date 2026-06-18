@@ -32,6 +32,40 @@ export async function runLlmAnalysis(scope: string = "portfolio"): Promise<strin
   return invoke("run_llm_analysis", { scope });
 }
 
+// 多模型管理（新版）
+export async function loadLlmModels(): Promise<string> {
+  return invoke("list_llm_models");
+}
+
+export interface LlmModelInput {
+  id?: string;
+  name: string;
+  provider: string;
+  api_base: string;
+  api_key: string;
+  model: string;
+  temperature: number;
+  enabled: boolean;
+  created_at?: string;
+}
+
+export async function saveLlmModel(model: LlmModelInput): Promise<string> {
+  return invoke("save_llm_model", { modelJson: JSON.stringify(model) });
+}
+
+export async function deleteLlmModel(modelId: string): Promise<string> {
+  return invoke("delete_llm_model", { modelId });
+}
+
+export async function setActiveLlmModel(modelId: string): Promise<string> {
+  return invoke("set_active_llm_model", { modelId });
+}
+
+export async function testLlmConnection(apiBase: string, apiKey: string, model: string): Promise<string> {
+  return invoke("test_llm_connection", { apiBase, apiKey, model });
+}
+
+// 旧版接口（保留兼容）
 export async function saveLlmConfig(url: string, apiKey: string, model: string, temperature: number): Promise<string> {
   return invoke("save_llm_config", { url, apiKey, model, temperature });
 }
