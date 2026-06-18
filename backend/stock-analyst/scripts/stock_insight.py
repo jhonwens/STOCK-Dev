@@ -16,11 +16,13 @@ def refresh_live_data(db, code):
     crawler = StockCrawler()
     realtime = crawler.get_realtime(code)
     if realtime and realtime.get("price", 0) > 0:
-        db.insert_realtime(realtime)
+        # db_manager.insert_realtime 期望 list[dict] 入参
+        db.insert_realtime([realtime])
         sys.stderr.write(f"[data] realtime refreshed: {realtime.get('name')} @ {realtime.get('price')}\n")
     fund = crawler.get_fund_flow(code)
     if fund:
-        db.insert_fund_flow(fund)
+        # db_manager.insert_fund_flow 同样期望 list[dict] 入参
+        db.insert_fund_flow([fund])
         sys.stderr.write(f"[data] fund flow refreshed: {fund.get('main_inflow', 0)}\n")
 
 
