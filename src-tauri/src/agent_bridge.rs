@@ -89,3 +89,59 @@ pub fn message_list(db_path: &str, session_id: &str) -> Result<Vec<serde_json::V
     let out = run_python(&req)?;
     serde_json::from_str(&out).map_err(|e| e.to_string())
 }
+
+// ⚠️ Plan 修订 (Batch 2 #6, 方案 A): 改从 "assistant_saved" 事件拿 message_id
+// Python bridge save assistant message 后 emit 该事件
+pub fn send_message_streaming<F>(
+    db_path: &str,
+    session_id: &str,
+    text: &str,
+    mut on_event: F,
+) -> Result<i32, String>
+where
+    F: FnMut(&str, &serde_json::Value) + Send + 'static,
+{
+    use std::io::{BufRead, BufReader};
+    use std::process::{Command, Stdio};
+
+    let mut child = Command::new("python3")
+        .arg("-m")
+        .arg("backend.ai.agent_bridge")
+        .arg("streaming")
+        .arg(db_path)
+        .arg(session_id)
+        .arg(text)
+        .current_dir(project_root())
+        .stdout(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Spawn failed: {}", e))?;
+
+    let stdout = child.stdout.take().ok_or("No stdout")?;
+    let reader = BufReader::new(stdout);
+
+    let mut final_msg_id = 0;
+
+    for line in reader.lines() {
+        let line = line.map_err(|e| e.to_string())?;
+        if line.is_empty() {
+            continue;
+        }
+        // 每行是一个 JSON 事件：{"event": "...", "data": ...}
+        if let Ok(evt) = serde_json::from_str::<serde_json::Value>(&line) {
+            let event_type = evt["event"].as_str().unwrap_or("").to_string();
+            let data = evt["data"].clone();
+            on_event(&event_type, &data);
+
+            // ⚠️ Plan 修订 (方案 A): 不再从 "done" 拿 message_id
+            // 改从 "assistant_saved" 事件拿（Python bridge save 后 emit）
+            if event_type == "assistant_saved" {
+                if let Some(id) = data["message_id"].as_i64() {
+                    final_msg_id = id as i32;
+                }
+            }
+        }
+    }
+
+    child.wait().map_err(|e| e.to_string())?;
+    Ok(final_msg_id)
+}

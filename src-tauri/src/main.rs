@@ -55,6 +55,8 @@ fn main() {
             agent_commands::agent_delete_session,
             agent_commands::agent_pin_session,
             agent_commands::agent_get_messages,
+            // Task 8: 流式消息发送
+            agent_commands::agent_send_message,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
