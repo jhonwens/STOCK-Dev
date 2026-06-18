@@ -191,6 +191,23 @@ def main():
         return
     try:
         result = json.loads(cleaned)
+        # 后处理：校验并修正
+        for category in ("short_term", "long_term"):
+            if category not in result:
+                continue
+            sub = result[category]
+            if "top5" not in sub:
+                sub["top5"] = []
+                continue
+            top5 = sub["top5"]
+            # 严格限制为 5 只
+            if len(top5) > 5:
+                top5 = sorted(top5, key=lambda x: x.get("overall_score", 0), reverse=True)[:5]
+                sub["top5"] = top5
+            # 按 score 重新排序 + 重新分配 rank
+            top5.sort(key=lambda x: x.get("overall_score", 0), reverse=True)
+            for i, stock in enumerate(top5):
+                stock["rank"] = i + 1
         print(json.dumps(result, ensure_ascii=False))
     except json.JSONDecodeError as e:
         print(json.dumps({

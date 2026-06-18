@@ -156,13 +156,23 @@ export default function Watchlist() {
 
   const renderCategory = (data: { summary: string; top5: CandidateStock[] } | undefined, title: string, colorScheme: "short" | "long") => {
     if (!data) return null;
+    const stocks = (data.top5 || []).slice(0, 5);  // 严格截取 5 只
+    const borderColor = colorScheme === "short" ? "#7c5cfc" : "#2e7d32";
     return (
       <div style={{ marginBottom: 28 }}>
         <div style={{
-          fontSize: 18, fontWeight: 700, marginBottom: 4,
-          color: colorScheme === "short" ? "#7c5cfc" : "#2e7d32",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 4,
         }}>
-          {title}
+          <div style={{
+            fontSize: 18, fontWeight: 700,
+            color: borderColor,
+          }}>
+            {title}
+          </div>
+          <div style={{ fontSize: 12, color: "#888" }}>
+            严格筛选 {stocks.length} 只 · 按 AI 综合分排序
+          </div>
         </div>
         {data.summary && (
           <div style={{
@@ -178,7 +188,7 @@ export default function Watchlist() {
           gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
           gap: 14,
         }}>
-          {(data.top5 || []).map((stock, i) => renderCard(stock, i, colorScheme))}
+          {stocks.map((stock, i) => renderCard(stock, i, colorScheme))}
         </div>
       </div>
     );
@@ -191,12 +201,10 @@ export default function Watchlist() {
         marginBottom: 20, flexWrap: "wrap", gap: 8,
       }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>🎯 候选推荐</h2>
-          {cacheTime && (
-            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
-              上次分析: {cacheTime}
-            </div>
-          )}
+          <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>🎯 AI 推荐结果</h2>
+          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+            从 198 只候选股中筛选 · 5+5 共 10 只 · {cacheTime ? `上次分析: ${cacheTime}` : "尚未分析"}
+          </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button
