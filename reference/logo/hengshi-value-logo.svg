@@ -32,16 +32,16 @@
   <!-- 圆角背景（macOS Big Sur 风格 22% 圆角） -->
   <rect width="100" height="100" rx="22" fill="url(#bg)"/>
 
-  <!-- 装饰：四角星点（缩小到 12-88 范围） -->
+  <!-- 装饰：四角星点 -->
   <g fill="#fbbf24" opacity="0.5">
-    <circle cx="12" cy="12" r="0.6"/>
-    <circle cx="88" cy="14" r="0.5"/>
-    <circle cx="14" cy="88" r="0.5"/>
-    <circle cx="86" cy="86" r="0.6"/>
+    <circle cx="14" cy="14" r="0.6"/>
+    <circle cx="86" cy="18" r="0.5"/>
+    <circle cx="18" cy="86" r="0.5"/>
+    <circle cx="84" cy="84" r="0.6"/>
   </g>
 
-  <!-- 牛头：缩小到 65%（translate 到中心 + scale 0.65） -->
-  <g transform="translate(50,52) scale(0.65)">
+  <!-- 牛头：原大小 100%（不缩小，主体清晰可见） -->
+  <g transform="translate(50,52)">
 
     <!-- 整体高光层 -->
     <ellipse cx="0" cy="0" rx="22" ry="20" fill="url(#shine)"/>
@@ -87,7 +87,7 @@
   </g>
 
   <!-- 底部装饰：装饰横线 + 衡势价值字样 -->
-  <g transform="translate(50,88)">
+  <g transform="translate(50,84)">
     <line x1="-15" y1="0" x2="15" y2="0" stroke="#fbbf24" stroke-width="0.5" opacity="0.6"/>
     <text x="0" y="5" text-anchor="middle"
           font-family="'KaiTi', 'STKaiti', '楷体', serif"

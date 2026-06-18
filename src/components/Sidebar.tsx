@@ -25,19 +25,19 @@ export default function Sidebar() {
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.08)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img
             src="/src/assets/logo-64.png"
             alt="衡势价值"
             style={{
-              width: 32, height: 32,
+              width: 24, height: 24,
             }}
           />
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "0.5px" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "0.5px" }}>
               衡势价值
             </div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
               AI 股票分析
             </div>
           </div>

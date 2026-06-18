@@ -30,9 +30,9 @@ export default function About() {
         <img
           src="/src/assets/logo-128.png"
           alt="衡势价值"
-          style={{ width: 80, height: 80, borderRadius: 18, marginBottom: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}
+          style={{ width: 56, height: 56, borderRadius: 12, marginBottom: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}
         />
-        <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: 1 }}>衡势价值</div>
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 1 }}>衡势价值</div>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>
           AI 驱动的中长线价值投资助手
         </div>
