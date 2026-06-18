@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { exportMessage } from "../../services/agent";
 
 export interface ToolCall {
   name: string;
@@ -59,7 +59,51 @@ export default function MessageItem({ message }: Props) {
     );
   }
 
-  // assistant
+  if (message.role === "assistant" && message.id > 0) {
+    return (
+      <div className="flex justify-start mb-4">
+        <div className="max-w-[80%] bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2 text-sm text-gray-500">
+            <span>🤖</span>
+            <span>Agent</span>
+            <div className="ml-auto flex gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const path = await exportMessage(message.sessionId, message.id, "md");
+                    alert(`已保存: ${path}`);
+                  } catch (e) {
+                    alert(`保存失败: ${e}`);
+                  }
+                }}
+                className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+              >
+                💾 MD
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const path = await exportMessage(message.sessionId, message.id, "html");
+                    alert(`已保存: ${path}`);
+                  } catch (e) {
+                    alert(`保存失败: ${e}`);
+                  }
+                }}
+                className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+              >
+                🌐 HTML
+              </button>
+            </div>
+          </div>
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap">
+            {message.content}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // assistant (临时消息 id <= 0)
   return (
     <div className="flex justify-start mb-4">
       <div className="max-w-[80%] bg-white border border-gray-200 rounded-lg p-4">

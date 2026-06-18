@@ -102,3 +102,15 @@ export async function sendMessage(
   // 返回 unlistener（调用方负责清理）
   return unlisteners;
 }
+
+export async function exportMessage(
+  sessionId: string,
+  messageId: number,
+  format: "md" | "html"
+): Promise<string> {
+  return await invoke<string>("agent_export", {
+    sessionId,
+    messageId,
+    format,
+  });
+}
