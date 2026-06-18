@@ -73,22 +73,19 @@ def recommend_candidates() -> str:
 
 
 def analyze_market() -> str:
-    """大盘分析 - 基于 stock_realtime + stock_fund_flow 聚合"""
+    """大盘分析 - 基于 stock_realtime + stock_fund_flow 聚合
+
+    已知问题：stock_realtime 表中 code 字段都是股票代码（如 000001=平安银行），
+    不包含大盘指数（000001.SH/399001.SZ/399006.SZ）且表结构无 type 列区分。
+    因此本函数只输出 A 股市场的聚合统计（涨跌停、资金净流入），
+    不输出具体指数点位（如需指数数据，请单独接入指数行情源）。
+    """
     if not DB_PATH.exists():
         return "错误: 数据库不存在"
 
     conn = sqlite3.connect(str(DB_PATH))
     try:
-        # 大盘指数（用 plan 中的代码：000001/399001/399006，注：000001 实际是平安银行）
-        cursor = conn.execute("""
-            SELECT code, name, price, change_pct
-            FROM stock_realtime
-            WHERE code IN ('000001', '399001', '399006')
-            ORDER BY code
-        """)
-        indices = cursor.fetchall()
-
-        # 涨跌停统计
+        # 涨跌停统计（基于全市场 stock_realtime）
         cursor = conn.execute("""
             SELECT
                 SUM(CASE WHEN change_pct > 9.5 THEN 1 ELSE 0 END) as limit_up,
@@ -107,11 +104,11 @@ def analyze_market() -> str:
         inflow = cursor.fetchone()
 
         lines = ["## A 股大盘概况"]
-        for code, name, price, pct in indices:
-            lines.append(f"- **{name}** ({code}): {price:.2f} ({pct:+.2f}%)")
+        lines.append("> 注：大盘指数点位（上证指数/深证成指/创业板指）需单独接入指数行情源，"
+                     "本表（stock_realtime）只存储个股实时数据。\n")
 
         if up_down and up_down[2] and up_down[2] > 0:
-            lines.append(f"\n**涨跌停**: 涨停 {up_down[0] or 0} / 跌停 {up_down[1] or 0} / 总 {up_down[2]}")
+            lines.append(f"**涨跌停**: 涨停 {up_down[0] or 0} / 跌停 {up_down[1] or 0} / 总 {up_down[2]}")
 
         if inflow and inflow[0] is not None:
             lines.append(f"**资金净流入**: {inflow[0]:.2f} 元")
