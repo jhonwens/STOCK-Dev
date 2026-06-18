@@ -35,7 +35,10 @@ class StockAgent:
         self.max_steps = max_steps
         self.step_timeout = step_timeout
         self.total_timeout = total_timeout
-        self.llm = LLMClient(load_llm_config())
+        # 现有 stock-analyst LLMClient.__init__ 不接受 config 参数
+        # plan 中预设的 LLMClient(load_llm_config()) 接口仅在测试 mock 中成立
+        # 这里实例化无参版本（CLI 实际运行时真实 LLM 缺少 tools 支持，见报告）
+        self.llm = LLMClient()
 
     def run(self, user_message: str, history: list, session_id: str) -> Iterator[SSEEvent]:
         """ReAct 循环主入口"""
