@@ -29,15 +29,15 @@
     </radialGradient>
   </defs>
 
-  <!-- 圆角背景（macOS Big Sur 风格 22% 圆角） -->
-  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+  <!-- 圆角背景（参考 MD Editor: 边距 3-5%，圆角占 94%） -->
+  <rect x="3" y="3" width="94" height="94" rx="21" fill="url(#bg)"/>
 
-  <!-- 装饰：四角星点 -->
+  <!-- 装饰：四角星点（缩进到背景内） -->
   <g fill="#fbbf24" opacity="0.5">
-    <circle cx="14" cy="14" r="0.6"/>
-    <circle cx="86" cy="18" r="0.5"/>
-    <circle cx="18" cy="86" r="0.5"/>
-    <circle cx="84" cy="84" r="0.6"/>
+    <circle cx="13" cy="13" r="0.6"/>
+    <circle cx="87" cy="15" r="0.5"/>
+    <circle cx="15" cy="87" r="0.5"/>
+    <circle cx="85" cy="85" r="0.6"/>
   </g>
 
   <!-- 牛头：原大小 100%（不缩小，主体清晰可见） -->
