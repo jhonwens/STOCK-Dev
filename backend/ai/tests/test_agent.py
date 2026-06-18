@@ -60,3 +60,31 @@ def test_agent_run_with_tool_call():
         assert event_types[-1] == "done"
         # final_answer 在 done 之前
         assert event_types.index("final_answer") < event_types.index("done")
+
+def test_agent_repeat_detection_breaks_loop():
+    """测试重复调用同一 skill 触发熔断"""
+    # Mock LLM 让它连续返回相同的 tool_call
+    mock_resp = MagicMock()
+    mock_resp.choices = [MagicMock()]
+    mock_resp.choices[0].message.content = ""
+    mock_resp.choices[0].message.tool_calls = [MagicMock()]
+    mock_resp.choices[0].message.tool_calls[0].function.name = "search_stock"
+    mock_resp.choices[0].message.tool_calls[0].function.arguments = '{"query": "test"}'
+
+    with patch("backend.ai.agent.LLMClient") as MockClient:
+        mock_client = MockClient.return_value
+        mock_client.chat.return_value = mock_resp  # 每次返回相同 tool_call
+
+        agent = StockAgent(max_steps=10)  # 给足 10 步，应该 3 步就熔断
+        events = list(agent.run("查一下 test", history=[], session_id="test"))
+
+        event_types = [e.event for e in events]
+        # 应该包含 error 事件
+        assert "error" in event_types
+        # 实际执行步数应该 <= 4（3 步重复 + 1 步熔断）
+        done_events = [e for e in events if e.event == "done"]
+        assert len(done_events) == 1
+        assert done_events[0].data["step"] <= 4
+        # 错误信息应该提示重复
+        error_events = [e for e in events if e.event == "error"]
+        assert any("重复" in e.data["content"] for e in error_events)

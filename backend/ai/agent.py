@@ -45,6 +45,10 @@ class StockAgent:
         start_time = time.time()
         messages = self._build_messages(user_message, history)
 
+        # 重复调用熔断：记录最近 3 步的 tool_call 签名，
+        # 若完全一致则判定 LLM 进入死循环，主动终止以避免耗尽 max_steps
+        recent_step_signatures: list = []
+
         for step in range(1, self.max_steps + 1):
             # 超时检查
             if time.time() - start_time > self.total_timeout:
@@ -73,6 +77,31 @@ class StockAgent:
 
             # 情况 1: LLM 决定调用 skill
             if tool_calls:
+                # 收集本步所有 tool_call 的签名 (name, sorted_args_items)
+                step_signatures: list = []
+                for tc in tool_calls:
+                    try:
+                        args = json.loads(tc.function.arguments)
+                    except (json.JSONDecodeError, AttributeError):
+                        args = {}
+                    sig = (tc.function.name, tuple(sorted(args.items())))
+                    step_signatures.append(sig)
+
+                # 重复熔断检测：最近 3 步签名完全一致即触发
+                recent_step_signatures.append(tuple(step_signatures))
+                if (
+                    len(recent_step_signatures) >= 3
+                    and len(set(recent_step_signatures[-3:])) == 1
+                ):
+                    yield SSEEvent("error", {
+                        "content": "检测到重复调用同一 skill，已自动熔断。请换个问题或换个模型。"
+                    })
+                    yield SSEEvent("done", {
+                        "step": step,
+                        "duration_ms": int((time.time() - start_time) * 1000)
+                    })
+                    return
+
                 for tc in tool_calls:
                     func_name = tc.function.name
                     try:
