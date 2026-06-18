@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Portfolio from "./pages/Portfolio";
 import Watchlist from "./pages/Watchlist";
+import AIAgent from "./pages/AIAgent";
 import Settings from "./pages/Settings";
 import Membership from "./pages/Membership";
 import About from "./pages/About";
@@ -35,6 +36,7 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="portfolio" element={<Portfolio />} />
           <Route path="watchlist" element={<Watchlist />} />
+          <Route path="ai-analyst" element={<AIAgent />} />
           <Route path="membership" element={<Membership />} />
           <Route path="about" element={<About />} />
           <Route path="settings" element={<Settings />} />

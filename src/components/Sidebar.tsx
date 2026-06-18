@@ -4,7 +4,7 @@ const navItems = [
   { path: "/", label: "股票池概览", icon: "📊" },
   { path: "/portfolio", label: "持仓分析", icon: "📁" },
   { path: "/watchlist", label: "候选推荐", icon: "🎯" },
-  { path: "/fundamental", label: "个股分析", icon: "📈" },
+  { path: "/ai-analyst", icon: "🤖", label: "智能分析" },
   { path: "/membership", label: "会员中心", icon: "👤" },
   { path: "/about", label: "关于", icon: "ℹ️" },
   { path: "/settings", label: "设置", icon: "⚙️" },
