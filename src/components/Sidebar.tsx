@@ -30,8 +30,7 @@ export default function Sidebar() {
             src="/src/assets/logo-64.png"
             alt="衡势价值"
             style={{
-              width: 36, height: 36, borderRadius: 10,
-              boxShadow: "0 2px 6px rgba(91,141,239,0.3)",
+              width: 32, height: 32,
             }}
           />
           <div>
