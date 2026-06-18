@@ -57,6 +57,8 @@ fn main() {
             agent_commands::agent_get_messages,
             // Task 8: 流式消息发送
             agent_commands::agent_send_message,
+            // Task 14: 报告导出 (MD/HTML)
+            agent_commands::agent_export,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -104,3 +104,22 @@ pub async fn agent_send_message(
 
     Ok(0) // 立即返回，消息 ID 后续通过 event 推回
 }
+
+#[tauri::command]
+pub fn agent_export(
+    session_id: String,
+    message_id: i32,
+    format: String,
+) -> Result<String, String> {
+    let result = crate::agent_bridge::export_message(
+        db_path().to_str().unwrap(),
+        &session_id,
+        message_id,
+        &format,
+        None,
+    )?;
+    result["file_path"]
+        .as_str()
+        .map(|s| s.to_string())
+        .ok_or_else(|| "Invalid response from export".to_string())
+}

@@ -90,6 +90,31 @@ pub fn message_list(db_path: &str, session_id: &str) -> Result<Vec<serde_json::V
     serde_json::from_str(&out).map_err(|e| e.to_string())
 }
 
+pub fn export_message(
+    db_path: &str,
+    session_id: &str,
+    message_id: i32,
+    format: &str,
+    output_dir: Option<&str>,
+) -> Result<serde_json::Value, String> {
+    let args = vec![
+        db_path.to_string(),
+        session_id.to_string(),
+        message_id.to_string(),
+    ];
+    let kwargs = serde_json::json!({
+        "format": format,
+        "output_dir": output_dir
+    });
+    let req = PyRequest {
+        action: "export_message".into(),
+        args,
+        kwargs,
+    };
+    let out = run_python(&req)?;
+    serde_json::from_str(&out).map_err(|e| e.to_string())
+}
+
 // ⚠️ Plan 修订 (Batch 2 #6, 方案 A): 改从 "assistant_saved" 事件拿 message_id
 // Python bridge save assistant message 后 emit 该事件
 pub fn send_message_streaming<F>(
