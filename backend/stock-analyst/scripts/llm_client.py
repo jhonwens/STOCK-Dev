@@ -187,8 +187,13 @@ class LLMClient:
     # ----------------------------------------------------------------
     # 聊天接口（不变）
     # ----------------------------------------------------------------
-    def chat(self, prompt, system_prompt=None, temperature=None, max_tokens=None):
-        """调用激活模型的 API"""
+    def chat(self, prompt, system_prompt=None, temperature=None, max_tokens=None, json_mode=False):
+        """调用激活模型的 API
+
+        Args:
+            json_mode: 启用后会在请求中加 response_format={"type": "json_object"}，
+                       强制 LLM 输出合法 JSON（Qwen/DeepSeek/OpenAI 均支持）。
+        """
         if not self.client:
             return None, "LLM 客户端未初始化（请先在设置中配置模型）"
 
@@ -198,12 +203,17 @@ class LLMClient:
         messages.append({"role": "user", "content": prompt})
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.config.get('model', 'qwen3.5-35b-a3b'),
-                messages=messages,
-                temperature=temperature or self.config.get('temperature', 0.7),
-                max_tokens=max_tokens or self.config.get('max_tokens', 2000)
-            )
+            kwargs = {
+                "model": self.config.get('model', 'qwen3.5-35b-a3b'),
+                "messages": messages,
+                "temperature": temperature or self.config.get('temperature', 0.7),
+                "max_tokens": max_tokens or self.config.get('max_tokens', 16000),
+            }
+            # 强制 JSON 模式（如果用户开启）
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+
+            response = self.client.chat.completions.create(**kwargs)
             return response.choices[0].message.content, None
         except Exception as e:
             return None, str(e)

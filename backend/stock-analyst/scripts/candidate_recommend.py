@@ -169,7 +169,14 @@ def main():
 
     client = LLMClient()
     user_message = json.dumps({"candidates": data}, ensure_ascii=False, indent=2)
-    response, error = client.chat(user_message, system_prompt=system_prompt, max_tokens=8000)
+    # max_tokens=16000: 5 短期 + 5 长期 = 10 股票 × 12 维度 ≈ 12000+ tokens
+    # json_mode=True: 强制 LLM 输出合法 JSON（Qwen/DeepSeek/OpenAI 都支持）
+    response, error = client.chat(
+        user_message,
+        system_prompt=system_prompt,
+        max_tokens=16000,
+        json_mode=True,
+    )
 
     if error:
         print(json.dumps({"error": error}, ensure_ascii=False))
