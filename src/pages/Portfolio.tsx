@@ -208,9 +208,13 @@ export default function Portfolio() {
     setMdStatus("");
     try {
       const res = await runPortfolioLlm(s.code);
-      setLlmData(JSON.parse(res));
-      setCacheTime("");
-      savePortfolioAnalysis(s.code, res).catch(() => {});
+      try {
+        setLlmData(JSON.parse(res));
+        setCacheTime("");
+        savePortfolioAnalysis(s.code, res).catch(() => {});
+      } catch (e) {
+        setLlmError(`❌ LLM 返回格式异常: ${String(e).replace("SyntaxError: JSON Parse error: ", "").slice(0, 50)}`);
+      }
     } catch (e) {
       setLlmError(`❌ 分析失败: ${e}`);
     }

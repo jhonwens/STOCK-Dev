@@ -108,7 +108,18 @@ def collect_candidate_data(db, codes):
 
 
 def extract_json(text):
+    """从 LLM 返回中提取 JSON。容忍多种格式：
+    1. 纯 JSON
+    2. ```json ... ``` 代码块
+    3. ``` ... ``` 任意代码块
+    4. 嵌入在中文文本中的 JSON（用花括号定位）
+    提取失败返回空字符串，让上层走错误处理。
+    """
     text = text.strip()
+    if not text:
+        return ""
+
+    # 1. 剥代码块（```json ... ``` 或 ``` ... ```）
     if text.startswith("```"):
         lines = text.split("\n")
         start = 0
@@ -121,8 +132,20 @@ def extract_json(text):
             if lines[i].strip().startswith("```"):
                 end = i
                 break
-        text = "\n".join(lines[start:end])
-    return text.strip()
+        text = "\n".join(lines[start:end]).strip()
+
+    # 2. 如果首字符是 { 或 [，尝试直接解析
+    if text.startswith(("{", "[")):
+        return text
+
+    # 3. 嵌入文本：找最外层 { ... } 块
+    first = text.find("{")
+    last = text.rfind("}")
+    if first != -1 and last != -1 and last > first:
+        candidate = text[first:last + 1]
+        return candidate
+
+    return ""
 
 
 def main():
@@ -153,11 +176,20 @@ def main():
         return
 
     cleaned = extract_json(response)
+    if not cleaned:
+        print(json.dumps({
+            "error": "LLM 未返回 JSON 内容",
+            "raw_preview": response[:200] if response else "(空)"
+        }, ensure_ascii=False))
+        return
     try:
         result = json.loads(cleaned)
         print(json.dumps(result, ensure_ascii=False))
-    except json.JSONDecodeError:
-        print(json.dumps({"error": "LLM返回格式错误", "raw": response}, ensure_ascii=False))
+    except json.JSONDecodeError as e:
+        print(json.dumps({
+            "error": f"LLM 返回的 JSON 解析失败: {e}",
+            "raw_preview": response[:200]
+        }, ensure_ascii=False))
 
 
 if __name__ == "__main__":

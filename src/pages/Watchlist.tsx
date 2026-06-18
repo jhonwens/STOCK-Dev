@@ -49,12 +49,17 @@ export default function Watchlist() {
     setMdStatus("");
     try {
       const res = await runCandidateLlm();
-      const data = JSON.parse(res);
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setRecommendation(data);
-        saveCandidateAnalysis(res).catch(() => {});
+      try {
+        const data = JSON.parse(res);
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setRecommendation(data);
+          saveCandidateAnalysis(res).catch(() => {});
+        }
+      } catch (e) {
+        // LLM 返回非 JSON 文本（如"加仓"）时，展示原始内容而非崩溃
+        setError(`❌ LLM 返回格式异常: ${String(e).replace("SyntaxError: JSON Parse error: ", "").slice(0, 50)}`);
       }
     } catch (e) {
       setError(String(e));

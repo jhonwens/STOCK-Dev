@@ -107,8 +107,12 @@ export default function StockInsight() {
     setSearchParams({});
     try {
       const res = await searchStock(query.trim());
-      const data = JSON.parse(res);
-      setSearchResults(data || []);
+      try {
+        const data = JSON.parse(res);
+        setSearchResults(data || []);
+      } catch {
+        setSearchResults([]);
+      }
     } catch (e) {
       setError(String(e));
     }
@@ -144,12 +148,16 @@ export default function StockInsight() {
     setMdStatus("");
     try {
       const res = await runStockInsight(selectedCode);
-      const data = JSON.parse(res);
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setInsight(data);
-        saveStockInsight(selectedCode, res).catch(() => {});
+      try {
+        const data = JSON.parse(res);
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setInsight(data);
+          saveStockInsight(selectedCode, res).catch(() => {});
+        }
+      } catch (e) {
+        setError(`❌ LLM 返回格式异常: ${String(e).replace("SyntaxError: JSON Parse error: ", "").slice(0, 50)}`);
       }
     } catch (e) {
       setError(String(e));
