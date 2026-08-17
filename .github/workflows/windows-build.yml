@@ -1,0 +1,104 @@
+name: Windows Build & Package
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    env:
+      PYTHON_VERSION: "3.12"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- 前端（Tauri 依赖 dist/） ----------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build frontend (vite + tsc -> dist/)
+        run: npm run build
+
+      # ---------- Python 后端（PyInstaller 重建 backend-runner.exe） ----------
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install backend deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller akshare baostock python-dateutil openai pyyaml requests certifi
+
+      - name: Build backend-runner with PyInstaller
+        run: python -m PyInstaller --noconfirm backend-runner.spec
+
+      - name: Stage backend-runner.exe into resources/
+        run: |
+          New-Item -ItemType Directory -Force -Path resources | Out-Null
+          Copy-Item dist/backend-runner.exe resources/backend-runner.exe
+
+      # ---------- Rust / Tauri ----------
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build Tauri (Windows NSIS/MSI)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: src-tauri
+          args: --verbose
+
+      # ---------- 核验打包产物不包含 API KEY ----------
+      - name: Verify bundle excludes API keys
+        shell: pwsh
+        run: |
+          $bundle = "src-tauri/target/release/bundle"
+          $found = @()
+          Get-ChildItem -Path $bundle -Recurse -Force -ErrorAction SilentlyContinue |
+            Where-Object { $_.PSIsContainer -and $_.Name -eq "resources" } |
+            ForEach-Object {
+              $res = $_.FullName
+              Get-ChildItem -Path $res -Recurse -Force -ErrorAction SilentlyContinue |
+                Where-Object { -not $_.PSIsContainer } |
+                ForEach-Object {
+                  $hits = Select-String -Path $_.FullName -Pattern "llm_config|sk-[A-Za-z0-9]{12,}" -ErrorAction SilentlyContinue
+                  if ($hits) { $found += "$($_.FullName)" }
+                }
+            }
+          if ($found.Count -gt 0) {
+            Write-Error "API key material found in bundle files:"
+            $found | ForEach-Object { Write-Error $_ }
+            exit 1
+          } else {
+            Write-Host "OK: no llm_config.json / sk- key material found in packaged resources"
+          }
+          Get-ChildItem -Path $bundle -Recurse -Filter "*.exe" | Select-Object FullName, Length
+          Get-ChildItem -Path $bundle -Recurse -Filter "*.msi" | Select-Object FullName, Length
+
+      # ---------- 上传安装包作为 artifact ----------
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: hengshi-windows-installers
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error

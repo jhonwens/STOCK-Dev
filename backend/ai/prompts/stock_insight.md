@@ -45,43 +45,15 @@ Highlight key risks the investor should monitor.
 
 Return valid JSON with this exact structure:
 
-```json
 {
-  "basic_info": {
-    "code": "600519",
-    "name": "贵州茅台",
-    "industry": "白酒",
-    "price": 1536.80,
-    "change_pct": 1.23,
-    "pe": 25.3,
-    "pb": 6.8
-  },
+  "basic_info": { "code": "600519", "name": "贵州茅台", "industry": "白酒", "price": 1536.80, "change_pct": 1.23, "pe": 25.3, "pb": 6.8 },
   "buy_point_analysis": {
     "summary": "综合判断...",
-    "short_term": {
-      "point": "KDJ金叉形成，主力资金连续净流入",
-      "price_range": [1520, 1540],
-      "confidence": "高",
-      "detail": "日线级别..."
-    },
-    "mid_term": {
-      "point": "MACD周线金叉，估值处于低位",
-      "price_range": [1480, 1520],
-      "confidence": "中",
-      "detail": "周线MACD..."
-    },
-    "long_term": {
-      "point": "PE历史低位，ROE稳定30%+",
-      "price_range": [1400, 1500],
-      "confidence": "高",
-      "detail": "当前PE-TTM..."
-    },
+    "short_term": { "point": "KDJ金叉形成，主力资金连续净流入", "price_range": [1520, 1540], "confidence": "高", "detail": "日线级别..." },
+    "mid_term": { "point": "MACD周线金叉，估值处于低位", "price_range": [1480, 1520], "confidence": "中", "detail": "周线MACD..." },
+    "long_term": { "point": "PE历史低位，ROE稳定30%+", "price_range": [1400, 1500], "confidence": "高", "detail": "当前PE-TTM..." },
     "position_suggestion": "建议30%仓位先建底仓，回调加仓",
-    "key_indicators": {
-      "support_level": 1480,
-      "resistance_level": 1600,
-      "stop_loss": 1420
-    }
+    "key_indicators": { "support_level": 1480, "resistance_level": 1600, "stop_loss": 1420 }
   },
   "analysis_12dim": {
     "基本面": "detailed analysis",
@@ -99,7 +71,6 @@ Return valid JSON with this exact structure:
   },
   "risk_warning": "主要风险..."
 }
-```
 
 ## Rules
 - Output ONLY valid JSON, no markdown wrapping

@@ -4,28 +4,89 @@
 
 import os
 import json
-import yaml
 from openai import OpenAI
+
+
+def extract_json(text):
+    """从 LLM 返回中提取 JSON。容忍多种格式：
+    1. 纯 JSON
+    2. ```json ... ``` 代码块
+    3. ``` ... ``` 任意代码块
+    4. 嵌入在中文文本中的 JSON（用花括号定位）
+    提取失败返回空字符串，让上层走错误处理。
+    """
+    if not text:
+        return ""
+    text = text.strip()
+    if not text:
+        return ""
+
+    # 1. 剥代码块（```json ... ``` 或 ``` ... ```）
+    if text.startswith("```"):
+        lines = text.split("\n")
+        start = 0
+        for i, line in enumerate(lines):
+            if line.strip().startswith("```"):
+                start = i + 1
+                break
+        end = len(lines)
+        for i in range(len(lines) - 1, start - 1, -1):
+            if lines[i].strip().startswith("```"):
+                end = i
+                break
+        text = "\n".join(lines[start:end]).strip()
+
+    # 2. 如果首字符是 { 或 [，尝试直接解析
+    if text.startswith(("{", "[")):
+        return text
+
+    # 3. 嵌入文本：找最外层 { ... } 块
+    first = text.find("{")
+    last = text.rfind("}")
+    if first != -1 and last != -1 and last > first:
+        return text[first:last + 1]
+
+    return ""
 
 
 # 配置路径（使用 __file__ 推导，不依赖 cwd）
 # __file__ = backend/stock-analyst/scripts/llm_client.py
 # 需要 3 次 dirname 回到项目根 STOCK-Dev/
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR)))
-DEFAULT_CONFIG_PATHS = [
-    os.path.join(_PROJECT_ROOT, "config", "llm_config.json"),  # 新格式
-    os.path.join(_PROJECT_ROOT, "config", "llm_models.json"),  # 别名
+# 优先用 STOCK_PROJECT_ROOT 环境变量（Rust 注入 = .app/Contents/Resources）
+# 否则从 __file__ 推导：scripts/llm_client.py → scripts/ → project_root（2 次 dirname）
+_PROJECT_ROOT = os.environ.get("STOCK_PROJECT_ROOT") or os.path.dirname(os.path.dirname(_SCRIPT_DIR))
+
+# 可写配置目录（打包模式下为应用数据目录，开发模式下为项目根目录/config）
+_CONFIG_WRITE_DIR = os.environ.get("STOCK_CONFIG_DIR") or os.path.join(_PROJECT_ROOT, "config")
+
+# 候选配置路径列表（按优先级查找）
+# 1. 用户显式配置的 STOCK_CONFIG_DIR
+# 2. app_data_dir 直系下（早期版本保存位置，向后兼容）
+# 3. app_data_dir/衡势价值/config/（当前 main.rs 设置的 STOCK_CONFIG_DIR 路径）
+# 4. 项目根 config/（开发模式 / 资源包）
+_CANDIDATE_DIRS = [
+    _CONFIG_WRITE_DIR,
+    os.path.join(os.path.expanduser("~"), "Library", "Application Support", "com.hengshi-value.app"),
+    os.path.join(os.path.expanduser("~"), "Library", "Application Support", "com.hengshi-value.app", "衡势价值", "config"),
+    os.path.join(_PROJECT_ROOT, "config"),
 ]
 
 
 def _find_config_path():
-    """查找第一个存在的配置文件"""
-    for p in DEFAULT_CONFIG_PATHS:
-        if os.path.exists(p):
-            return p
-    # 回退到旧路径
-    return os.path.join(_PROJECT_ROOT, "config", "llm_config.json")
+    """查找配置路径 - 优先可写目录，回退到所有候选位置"""
+    # 优先在已知位置找已存在的 llm_config.json
+    for d in _CANDIDATE_DIRS:
+        candidate = os.path.join(d, "llm_config.json")
+        if os.path.exists(candidate):
+            return candidate
+    # 最终回退到 STOCK_CONFIG_DIR
+    return os.path.join(_CONFIG_WRITE_DIR, "llm_config.json")
+
+
+def _write_config_path():
+    """获取可写的配置保存路径（始终写到当前 STOCK_CONFIG_DIR）"""
+    return os.path.join(_CONFIG_WRITE_DIR, "llm_config.json")
 
 
 def _legacy_single_config_path():
@@ -37,12 +98,22 @@ class LLMClient:
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.config = self._load_active_config()
-        self.client = None
-        if self.config:
-            self.client = OpenAI(
-                api_key=self.config.get('api_key'),
-                base_url=self.config.get('api_base')
-            )
+        self._client = None
+
+    def _ensure_client(self):
+        """惰性创建 OpenAI 客户端（仅 chat 需要）"""
+        if self._client is not None:
+            return self._client
+        if not self.config:
+            return None
+        api_key = self.config.get('api_key')
+        if not api_key:
+            return None
+        self._client = OpenAI(
+            api_key=api_key,
+            base_url=self.config.get('api_base')
+        )
+        return self._client
 
     # ----------------------------------------------------------------
     # 配置加载
@@ -183,7 +254,7 @@ class LLMClient:
         return f"✅ 已切换到 '{target.get('name', model_id)}'"
 
     def _save_all_models(self, models):
-        path = _find_config_path()
+        path = _write_config_path()
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(models, f, ensure_ascii=False, indent=2)
@@ -191,14 +262,17 @@ class LLMClient:
     # ----------------------------------------------------------------
     # 聊天接口（不变）
     # ----------------------------------------------------------------
-    def chat(self, prompt, system_prompt=None, temperature=None, max_tokens=None, json_mode=False):
+    def chat(self, prompt, system_prompt=None, temperature=None, max_tokens=None, json_mode=False, _retry_on_truncate=True):
         """调用激活模型的 API
 
         Args:
             json_mode: 启用后会在请求中加 response_format={"type": "json_object"}，
                        强制 LLM 输出合法 JSON（Qwen/DeepSeek/OpenAI 均支持）。
+            _retry_on_truncate: 内部参数 — 检测到 finish_reason=length（被 max_tokens 截断）
+                                时是否自动用 2x max_tokens 重试一次。
         """
-        if not self.client:
+        client = self._ensure_client()
+        if not client:
             return None, "LLM 客户端未初始化（请先在设置中配置模型）"
 
         messages = []
@@ -207,23 +281,40 @@ class LLMClient:
         messages.append({"role": "user", "content": prompt})
 
         try:
+            effective_max = max_tokens or self.config.get('max_tokens', 16000)
             kwargs = {
                 "model": self.config.get('model', 'qwen3.5-35b-a3b'),
                 "messages": messages,
                 "temperature": temperature or self.config.get('temperature', 0.7),
-                "max_tokens": max_tokens or self.config.get('max_tokens', 16000),
+                "max_tokens": effective_max,
             }
             # 强制 JSON 模式（如果用户开启）
             if json_mode:
                 kwargs["response_format"] = {"type": "json_object"}
 
-            response = self.client.chat.completions.create(**kwargs)
-            return response.choices[0].message.content, None
+            response = client.chat.completions.create(**kwargs)
+            content = response.choices[0].message.content or ""
+            finish_reason = getattr(response.choices[0], "finish_reason", None)
+
+            # 自动重试：被 max_tokens 截断时用 2x 重试一次
+            if finish_reason == "length" and _retry_on_truncate:
+                kwargs["max_tokens"] = effective_max * 2
+                response2 = client.chat.completions.create(**kwargs)
+                content2 = response2.choices[0].message.content or ""
+                if content2 and len(content2) > len(content):
+                    content = content2
+                    finish_reason = getattr(response2.choices[0], "finish_reason", None)
+
+            # 把 finish_reason 透传给调用方（如果调用方想用）
+            if finish_reason == "length" and not content.rstrip().endswith(("}", "]", "`", "。", "！", "？", "\"", "'")):
+                return content, "⚠️ LLM 输出被截断（finish_reason=length），JSON 可能不完整"
+
+            return content, None
         except Exception as e:
             return None, str(e)
 
     def is_available(self):
-        return self.client is not None
+        return self._ensure_client() is not None
 
     def get_active_model_name(self):
         if self.config:

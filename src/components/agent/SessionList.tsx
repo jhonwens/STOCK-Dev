@@ -1,16 +1,21 @@
 import { useState } from "react";
-// ⚠️ Plan 修订: Tauri 2.x 应使用 @tauri-apps/api/core（不是 /tauri）
-// 与现有 src/services/api.ts 保持一致
 import { invoke } from "@tauri-apps/api/core";
+
+function fmtDate(sqliteDt: string): string {
+  if (!sqliteDt) return "";
+  const d = new Date(sqliteDt.replace(" ", "T") + (sqliteDt.includes("Z") ? "" : "+08:00"));
+  if (isNaN(d.getTime())) return sqliteDt.slice(0, 16);
+  return d.toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
 
 export interface AgentSession {
   id: string;
   title: string;
-  createdAt: string;
-  updatedAt: string;
-  messageCount: number;
-  isPinned: boolean;
-  lastMessage?: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  is_pinned: boolean;
+  last_message?: string;
 }
 
 interface Props {
@@ -37,9 +42,10 @@ export default function SessionList({ sessions, currentId, onSelect, onRefresh, 
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("确定删除该会话？")) return;
     try {
+      console.log("Deleting session:", id);
       await invoke("agent_delete_session", { id });
+      console.log("Delete succeeded");
       onRefresh();
     } catch (e) {
       console.error("Delete failed:", e);
@@ -56,32 +62,49 @@ export default function SessionList({ sessions, currentId, onSelect, onRefresh, 
   }
 
   return (
-    <aside className="w-60 border-r border-gray-200 flex flex-col bg-gray-50">
-      <div className="p-3 border-b">
+    <aside style={{
+      width: 260, flexShrink: 0,
+      display: "flex", flexDirection: "column",
+      background: "var(--session-bg)",
+      borderRight: "1px solid var(--border)",
+    }}>
+      <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid var(--border)" }}>
         <button
           onClick={onCreate}
-          className="w-full py-2 px-3 rounded bg-blue-500 text-white text-sm hover:bg-blue-600"
+          style={{
+            width: "100%", padding: "10px 14px", borderRadius: 8,
+            background: "linear-gradient(135deg, var(--primary), var(--primary-dark))",
+            color: "#fff", fontSize: 13, fontWeight: 500,
+            border: "none", cursor: "pointer",
+            boxShadow: "0 1px 3px rgba(59,130,246,0.3)",
+            transition: "all 0.15s ease",
+          }}
         >
-          ➕ 新建会话
+          <span style={{ marginRight: 6 }}>＋</span>新建会话
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-2">
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 10px" }}>
         {sessions.length === 0 && (
-          <div className="text-center text-gray-400 text-sm py-4">暂无会话</div>
+          <div style={{ textAlign: "center", color: "var(--text-tertiary)", fontSize: 13, padding: "32px 0" }}>
+            暂无会话
+          </div>
         )}
         {sessions.map((s) => (
           <div
             key={s.id}
+            className="session-item"
             onClick={() => editingId !== s.id && onSelect(s.id)}
-            onDoubleClick={() => {
-              setEditingId(s.id);
-              setEditingTitle(s.title);
+            onDoubleClick={() => { setEditingId(s.id); setEditingTitle(s.title); }}
+            style={{
+              padding: "10px 10px", marginBottom: 2, borderRadius: 8,
+              cursor: "pointer", fontSize: 13,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: s.id === currentId ? "var(--session-active)" : "transparent",
+              color: s.id === currentId ? "#1e3a5f" : "var(--text)",
+              transition: "all 0.15s ease",
             }}
-            className={`group p-2 mb-1 rounded cursor-pointer text-sm flex items-center justify-between ${
-              s.id === currentId ? "bg-blue-100 text-blue-900" : "hover:bg-gray-100"
-            }`}
           >
-            <div className="flex-1 min-w-0">
+            <div style={{ flex: 1, minWidth: 0 }}>
               {editingId === s.id ? (
                 <input
                   autoFocus
@@ -92,41 +115,37 @@ export default function SessionList({ sessions, currentId, onSelect, onRefresh, 
                     if (e.key === "Enter") handleRename(s.id, editingTitle);
                     if (e.key === "Escape") setEditingId(null);
                   }}
-                  className="w-full px-1 py-0.5 text-sm border border-blue-300 rounded"
+                  style={{ width: "100%", padding: "4px 6px", fontSize: 13, border: "1px solid var(--primary)", borderRadius: 4, outline: "none" }}
                 />
               ) : (
                 <>
-                  <div className="font-medium truncate flex items-center gap-1">
-                    {s.isPinned && <span className="text-yellow-500">📌</span>}
+                  <div style={{
+                    fontWeight: s.id === currentId ? 600 : 500,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    display: "flex", alignItems: "center", gap: 4,
+                    fontSize: 13,
+                  }}>
+                    <span style={{ fontSize: 14 }}>{s.is_pinned ? "📌" : "💬"}</span>
                     {s.title}
                   </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {new Date(s.updatedAt).toLocaleString("zh-CN")}
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingLeft: 20 }}>
+                    {fmtDate(s.updated_at)}
+                    {s.message_count > 0 && <span> · {s.message_count} 条</span>}
                   </div>
                 </>
               )}
             </div>
-            <div className="opacity-0 group-hover:opacity-100 flex gap-1">
+            <div style={{ display: "flex", gap: 2, opacity: 0 }} className="session-actions">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePin(s.id, s.isPinned);
-                }}
-                className="text-xs px-1"
-                title={s.isPinned ? "取消置顶" : "置顶"}
-              >
-                📌
-              </button>
+                onClick={(e) => { e.stopPropagation(); handlePin(s.id, s.is_pinned); }}
+                style={{ fontSize: 12, padding: "2px 4px", border: "none", background: "none", cursor: "pointer", borderRadius: 4, lineHeight: 1 }}
+                title={s.is_pinned ? "取消置顶" : "置顶"}
+              >📌</button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(s.id);
-                }}
-                className="text-xs px-1 text-red-500"
+                onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }}
+                style={{ fontSize: 12, padding: "2px 4px", border: "none", background: "none", cursor: "pointer", borderRadius: 4, lineHeight: 1 }}
                 title="删除"
-              >
-                🗑️
-              </button>
+              >🗑️</button>
             </div>
           </div>
         ))}

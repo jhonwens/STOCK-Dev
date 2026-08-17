@@ -3,13 +3,14 @@ import json
 import sys
 import os
 import argparse
+import contextlib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db_manager import DBManager
 from llm_client import LLMClient
 from stock_crawler import StockCrawler
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "stock_data.db")
+DB_PATH = os.environ.get("STOCK_DB_PATH") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "stock_data.db")
 
 
 def refresh_live_data(db, code):
@@ -25,12 +26,67 @@ def refresh_live_data(db, code):
         db.insert_fund_flow([fund])
         sys.stderr.write(f"[data] fund flow refreshed: {fund.get('main_inflow', 0)}\n")
 
+    try:
+        import baostock as bs
+        # baostock 向 stdout 输出 login/logout 信息，重定向到 stderr 避免污染 JSON
+        with contextlib.redirect_stdout(sys.stderr):
+            lg = bs.login()
+            if lg.error_code == '0':
+                bs_code = f"sh.{code}" if code.startswith('6') else f"sz.{code}"
+
+                report_date = ""
+
+                # Profit data: ROE, EPS, netProfit, MBRevenue
+                rs = bs.query_profit_data(code=bs_code, year='2025', quarter='1')
+                roe = eps = profit = revenue = 0
+                if rs.error_code == '0' and rs.next():
+                    row = rs.get_row_data()
+                    roe = float(row[3] or 0)
+                    eps = float(row[4] or 0)
+                    profit = float(row[6] or 0)
+                    revenue = float(row[8] or 0) if row[8] else 0
+                    report_date = row[2] or ""
+
+                # Balance data: BPS (每股净资产) → compute PB = price / BPS
+                bvps = 0
+                rs2 = bs.query_balance_data(code=bs_code, year='2025', quarter='1')
+                if rs2.error_code == '0' and rs2.next():
+                    row = rs2.get_row_data()
+                    bvps = float(row[8] or 0)
+                    if not report_date:
+                        report_date = row[2] or ""
+
+                sys.stderr.write(f"[data] finance refreshed: ROE={roe:.2%} rev={revenue:.0f} profit={profit:.0f} bvps={bvps}\n")
+                conn = __import__('sqlite3').connect(db.db_path)
+                c = conn.cursor()
+
+                # Store financial data
+                c.execute('''INSERT OR REPLACE INTO stock_finance
+                    (code, roe, revenue, profit, eps, bvps, report_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                    (code, roe, revenue, profit, eps, bvps, report_date))
+
+                # Delete old garbage finance rows (roe=eps=0 from finance_fetcher)
+                c.execute("DELETE FROM stock_finance WHERE code=? AND roe=0 AND eps=0 AND report_date!=?", (code, report_date))
+
+                # Compute PB from BVPS and update stock_realtime
+                if bvps > 0 and realtime and realtime.get('price', 0) > 0:
+                    pb = round(realtime['price'] / bvps, 2)
+                    c.execute("UPDATE stock_realtime SET pb=? WHERE code=?", (pb, code))
+                    sys.stderr.write(f"[data] PB computed: {pb} (price={realtime['price']}, bvps={bvps})\n")
+
+                conn.commit()
+                conn.close()
+                bs.logout()
+    except Exception as e:
+        sys.stderr.write(f"[data] finance refresh skipped: {e}\n")
+
 
 def collect_stock_data(db, code):
     conn = __import__('sqlite3').connect(db.db_path)
     c = conn.cursor()
     item = {"code": code, "name": "", "price": 0, "change_pct": 0, "pe": 0, "pb": 0,
-            "roe": 0, "revenue_growth": 0, "profit_growth": 0, "eps": 0, "bvps": 0,
+            "roe": 0, "revenue": 0, "profit": 0, "eps": 0, "bvps": 0,
             "technical_score": 0, "technical_detail": {}, "main_inflow": 0,
             "institutional_holding_change": 0, "news": [], "industry": "",
             "industry_trend": "", "risk_beta": 0, "volatility": 0, "max_drawdown": 0,
@@ -49,8 +105,8 @@ def collect_stock_data(db, code):
     row = c.fetchone()
     if row:
         item["roe"] = float(row[0] or 0)
-        item["revenue_growth"] = float(row[1] or 0)
-        item["profit_growth"] = float(row[2] or 0)
+        item["revenue"] = float(row[1] or 0)
+        item["profit"] = float(row[2] or 0)
         item["eps"] = float(row[3] or 0)
         item["bvps"] = float(row[4] or 0)
 
@@ -132,10 +188,26 @@ def main():
 
     client = LLMClient()
     user_message = json.dumps({"stock": data}, ensure_ascii=False, indent=2)
-    response, error = client.chat(user_message, system_prompt=system_prompt, max_tokens=8000)
+
+    # 支持重试：最大 3 次，遇到 429 限流时等待后重试
+    max_retries = 3
+    response = None
+    error = None
+    for attempt in range(max_retries):
+        response, error = client.chat(user_message, system_prompt=system_prompt, max_tokens=16000, json_mode=True)
+        if error and "429" in error:
+            sys.stderr.write(f"[retry] Rate limited (429), attempt {attempt+1}/{max_retries}, waiting...\n")
+            import time
+            time.sleep(5 * (attempt + 1))
+            continue
+        break
 
     if error:
         print(json.dumps({"error": error}, ensure_ascii=False))
+        return
+
+    if not response:
+        print(json.dumps({"error": "LLM返回为空"}, ensure_ascii=False))
         return
 
     cleaned = extract_json(response)
@@ -152,7 +224,7 @@ def main():
         }
         print(json.dumps(result, ensure_ascii=False))
     except json.JSONDecodeError:
-        print(json.dumps({"error": "LLM返回格式错误", "raw": response}, ensure_ascii=False))
+        print(json.dumps({"error": "LLM返回格式错误", "raw": response, "extracted": cleaned}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

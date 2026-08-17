@@ -1,14 +1,17 @@
 import sys
 import os
 import json
+import re
 import ast
 import sqlite3
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from llm_client import LLMClient
+from llm_client import LLMClient, extract_json
+from db_manager import DBManager
+from stock_crawler import StockCrawler
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data/stock_data.db')
+DB_PATH = os.environ.get("STOCK_DB_PATH") or os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'stock_data.db')
 
 def compute_ma(closes, period):
     if len(closes) < period:
@@ -163,7 +166,7 @@ def query_stock_data(code):
 def run_analysis(code):
     data = query_stock_data(code)
 
-    prompt = f"""你是专业的A股投资分析师。请对股票 **{data['name']}（{data['code']}）** 进行分析，输出**最精简的操作建议**。
+    prompt = f"""你是专业的A股投资分析师。请对股票 **{data['name']}（{data['code']}）** 进行全面分析，输出**详细可执行的操作建议**。
 
 ## 实时行情数据
 - 最新价: {data['price']}
@@ -198,37 +201,112 @@ def run_analysis(code):
 
 ## 输出要求
 输出JSON格式（只输出JSON，不要其他文字），包含以下字段：
-1. overall_action: 总体操作建议，只能是"加仓"/"减仓"/"持有"之一
-2. short_term: 短期（1-4周）操作
-3. mid_term: 中期（1-3月）操作  
-4. long_term: 长期（6月+）操作
-   - 每个周期包含: action（"加仓"/"减仓"/"持有"）、percent（操作百分比，如减仓30%表示卖出当前持仓的30%）、reason（一句话理由）
+1. overall_action: 总体操作建议，只能是"加仓"/"减仓"/"持有"/"观望"之一
+2. short_term: 短期（1-4周）操作 — **必须给出具体持有周期、目标价位、进场条件、止损位**
+3. mid_term: 中期（1-3月）操作 — **同样需要具体价位和条件**
+4. long_term: 长期（6月+）操作 — **需要估值目标和关键拐点判断**
+   - 每个周期包含以下字段（务必填完整）：
+     - action: 操作建议（"加仓"/"减仓"/"持有"/"观望"）
+     - holding_period: 建议持有周期（如"1-2周"、"3-4周"、"1-3个月"、"6个月以上"）
+     - percent: 操作百分比（如加仓20表示加仓20%，减仓30表示卖出当前持仓的30%，持有/观望时为0）
+     - entry_condition: 进场/加仓条件（具体触发信号，如"股价回踩25元且KDJ金叉确认"）
+     - price_target: 目标价区间（如[27, 29]）
+     - stop_loss: 止损价位（具体数字）
+     - pullback_level: 回调预期（描述可能回调的位置和幅度）
+     - key_risk: 核心风险（一句话说明该周期的主要风险）
+     - catalyst: 催化因素（什么事件或信号可能触发行情）
+     - reason: 综合理由（一句话总结）
 5. support: 支撑位价格
 6. resistance: 阻力位价格
-7. stop_loss: 止损位价格
+7. stop_loss: 整体止损位价格
+
+示例输出格式（只做结构参考，数值需根据实际数据判断）：
 
 {{
-  "overall_action": "加仓",
-  "short_term": {{"action": "加仓", "percent": 20, "reason": "KDJ金叉形成，短期动能充足"}},
-  "mid_term": {{"action": "持有", "percent": 0, "reason": "趋势不明朗，等待进一步确认"}},
-  "long_term": {{"action": "减仓", "percent": 30, "reason": "行业景气度下行，PE处于历史高位"}},
-  "support": 1480,
-  "resistance": 1600,
-  "stop_loss": 1420
+  "overall_action": "观望",
+  "short_term": {{
+    "action": "观望",
+    "holding_period": "1-2周",
+    "percent": 0,
+    "entry_condition": "等待股价放量突破28元或回踩25元支撑位确认后再考虑",
+    "price_target": [27, 29],
+    "stop_loss": 23.5,
+    "pullback_level": "短线超卖后可能在25-26元区间震荡整理",
+    "key_risk": "大盘持续回调拖累中小盘股",
+    "catalyst": "中报业绩预告若超预期可能触发反弹",
+    "reason": "KDJ进入超卖区但基本面偏弱，短期反弹空间有限，观望为主"
+  }},
+  "mid_term": {{
+    "action": "持有",
+    "holding_period": "1-3个月",
+    "percent": 0,
+    "entry_condition": "若股价回踩24-25元区间且成交量萎缩可考虑建仓",
+    "price_target": [28, 32],
+    "stop_loss": 24,
+    "pullback_level": "中期可能再次测试24元支撑位",
+    "key_risk": "行业景气度下行拖累营收增速",
+    "catalyst": "数字经济/企业信息化相关政策出台",
+    "reason": "企业信息化赛道长期向好，但当前技术面趋势不明朗"
+  }},
+  "long_term": {{
+    "action": "减仓",
+    "holding_period": "6个月以上",
+    "percent": 30,
+    "entry_condition": "待ROE回升至5%以上、PE转正后再考虑加仓",
+    "price_target": [30, 35],
+    "stop_loss": 20,
+    "pullback_level": "基本面改善前估值有持续回归风险，可能下探20-22元",
+    "key_risk": "PE为负、PB高达19倍存在估值回归风险",
+    "catalyst": "盈利能力改善、亏损收窄或扭亏为盈",
+    "reason": "长期赛道好但当前盈利能力弱、估值偏高，建议控制仓位"
+  }},
+  "support": 25,
+  "resistance": 28,
+  "stop_loss": 23
 }}"""
 
     client = LLMClient()
-    result, error = client.chat(prompt, max_tokens=3000)
+    # json_mode=True: 强制 LLM 输出合法 JSON
+    # json_mode=False: 允许 LLM 自由发挥（容易追加"加仓建议"等说明文字，导致 JSON 解析失败）
+    result, error = client.chat(prompt, max_tokens=8000, json_mode=True)
     if error:
         return json.dumps({"error": error, "data": data}, ensure_ascii=False)
 
-    try:
-        parsed = json.loads(result)
-        parsed["_raw_data"] = data
-        return json.dumps(parsed, ensure_ascii=False)
-    except json.JSONDecodeError:
-        return json.dumps({"raw_analysis": result, "_raw_data": data}, ensure_ascii=False)
+    # 多层 JSON 提取 fallback：兼容模型不严格遵守 json_mode 的情况
+    parsed = None
+    parse_error = None
+    for attempt in (result, extract_json(result)):
+        if not attempt:
+            continue
+        try:
+            parsed = json.loads(attempt)
+            break
+        except json.JSONDecodeError as e:
+            parse_error = e
+            continue
+
+    if parsed is None:
+        # 最后一道兜底：把 LLM 原文嵌入返回，前端可选择展示
+        return json.dumps({
+            "raw_analysis": result,
+            "parse_error": str(parse_error) if parse_error else "无法解析 JSON",
+            "_raw_data": data,
+        }, ensure_ascii=False)
+
+    parsed["_raw_data"] = data
+    return json.dumps(parsed, ensure_ascii=False)
 
 if __name__ == "__main__":
     code = sys.argv[1] if len(sys.argv) > 1 else "300750"
+    # 分析前先刷新实时行情和资金流向
+    db = DBManager(DB_PATH)
+    crawler = StockCrawler()
+    realtime = crawler.get_realtime(code)
+    if realtime and realtime.get("price", 0) > 0:
+        db.insert_realtime([realtime])
+        sys.stderr.write(f"[data] realtime refreshed: {realtime.get('name')} @ {realtime.get('price')}\n")
+    fund = crawler.get_fund_flow(code)
+    if fund:
+        db.insert_fund_flow([fund])
+        sys.stderr.write(f"[data] fund flow refreshed: {fund.get('main_inflow', 0)}\n")
     print(run_analysis(code))

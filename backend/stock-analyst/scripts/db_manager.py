@@ -4,8 +4,16 @@ import sqlite3
 import os
 
 class DBManager:
-    def __init__(self, db_path):
-        self.db_path = db_path
+    def __init__(self, db_path=None):
+        if db_path is None:
+            db_path = os.environ.get("STOCK_DB_PATH")
+        if not db_path:
+            # 默认相对路径
+            db_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..", "data", "stock_data.db"
+            )
+        self.db_path = os.path.abspath(db_path)
         self._init_db()
 
     def _init_db(self):

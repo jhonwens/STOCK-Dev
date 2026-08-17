@@ -11,27 +11,6 @@ export interface ToolCall {
   durationMs?: number;
 }
 
-export interface AgentSession {
-  id: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-  messageCount: number;
-  isPinned: boolean;
-  lastMessage?: string;
-}
-
-export interface AgentMessage {
-  id: number;
-  sessionId: string;
-  role: "user" | "assistant" | "tool";
-  content: string;
-  toolCalls?: ToolCall[];
-  createdAt: string;
-  tokenCount?: number;
-  durationMs?: number;
-}
-
 export interface StreamEvent {
   event: "thinking" | "tool_call" | "tool_result" | "final_answer" | "done" | "error";
   data: any;

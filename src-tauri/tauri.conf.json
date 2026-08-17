@@ -28,7 +28,13 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "resources": {
+      "../backend/pyentry/": "backend/pyentry/",
+      "../backend/stock-analyst/scripts/": "backend/stock-analyst/scripts/",
+      "../backend/stock-analyst/resource/": "backend/stock-analyst/resource/",
+      "../backend/stock-analyst/data/": "backend/stock-analyst/data/"
+    }
   },
   "plugins": {
     "shell": {

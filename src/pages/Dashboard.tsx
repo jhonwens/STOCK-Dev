@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, Fragment } from "react";
+import { useState, useEffect, useMemo, useRef, Fragment } from "react";
 import {
   getDashboardSummary, getPortfolio, getTechnicalIndicators,
   getMarketMovers, getStockList, runAnalysis,
-  addStockToList, removeStockFromList,
+  addStockToList, removeStockFromList, batchRemoveStocks, batchAddStocks,
 } from "../services/api";
 import type { StockSummary, StockItem, TechnicalIndicators, MarketOverview, StockListEntry } from "../types";
 import TrendFilterBar from "../components/TrendFilterBar";
@@ -14,6 +14,9 @@ function fmtIndustryKey(raw: string): string {
 }
 
 export default function Dashboard() {
+  const mountedRef = useRef(true);
+  const updatingRef = useRef(false);
+
   const [summary, setSummary] = useState<StockSummary | null>(null);
   const [movers, setMovers] = useState<MarketOverview | null>(null);
   const [stockList, setStockList] = useState<StockListEntry[]>([]);
@@ -28,15 +31,42 @@ export default function Dashboard() {
   const [addName, setAddName] = useState("");
   const [addIndustry, setAddIndustry] = useState("");
   const [addMsg, setAddMsg] = useState("");
+  const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
+  const [showBatchImport, setShowBatchImport] = useState(false);
+  const [batchImportText, setBatchImportText] = useState("");
+  const [batchImportMsg, setBatchImportMsg] = useState("");
+  // 内联确认弹窗：避免 Tauri WebView 中 confirm() 不可用的问题
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string; message: string; onConfirm: () => void;
+  } | null>(null);
 
-  const loadAll = () => {
-    getDashboardSummary().then(setSummary);
-    getMarketMovers().then(setMovers);
-    getStockList().then(setStockList);
-    getPortfolio().then(setPortfolio);
+  const safeSet = <T,>(setter: React.Dispatch<React.SetStateAction<T>>, value: T) => {
+    if (mountedRef.current) setter(value);
   };
 
-  useEffect(() => { loadAll(); }, []);
+  const loadAll = () => {
+    if (!mountedRef.current) return;
+    Promise.all([
+      getDashboardSummary().catch(() => null),
+      getMarketMovers().catch(() => null),
+      getStockList().catch(() => []),
+      getPortfolio().catch(() => []),
+    ]).then(([s, m, l, p]) => {
+      if (!mountedRef.current) return;
+      if (s) setSummary(s);
+      if (l) setStockList(l);
+      if (p) setPortfolio(p);
+      if (m) setMovers(m);
+    });
+  };
+
+  useEffect(() => {
+    mountedRef.current = true;
+    loadAll();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const grouped = useMemo(() => {
     const codeToPrice = new Map<string, StockItem>();
@@ -85,8 +115,17 @@ export default function Dashboard() {
   };
 
   const handleUpdate = async () => {
+    if (updatingRef.current) return;
+    updatingRef.current = true;
     setUpdating(true);
-    await runAnalysis();
+    try {
+      const r = await runAnalysis();
+      console.log("[handleUpdate] 后端返回:", r);
+    } catch (e) {
+      console.error("[handleUpdate] 更新失败:", e);
+    }
+    if (!mountedRef.current) return;
+    updatingRef.current = false;
     setUpdating(false);
     loadAll();
   };
@@ -118,13 +157,126 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (code: string, name: string) => {
-    if (!confirm(`确定要从股票池移除 ${name}(${code}) 吗？`)) return;
+    console.log(`[handleDelete] 尝试删除: ${code} ${name}`);
     try {
-      await removeStockFromList(code);
+      const result = await removeStockFromList(code);
+      console.log(`[handleDelete] 删除成功:`, result);
       loadAll();
     } catch (e) {
-      alert(`删除失败: ${e}`);
+      console.error(`[handleDelete] 删除失败:`, e);
+      const msg = `删除失败: ${e}`;
+      console.error(msg);
+      alert(msg);
     }
+  };
+
+  const toggleSelect = (code: string) => {
+    setSelectedCodes(prev => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code); else next.add(code);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCodes.size === stockList.length) {
+      setSelectedCodes(new Set());
+    } else {
+      setSelectedCodes(new Set(stockList.map(s => s.code)));
+    }
+  };
+
+  // 按行业批量选择 / 取消：若本行业全部已选则取消，否则补齐
+  const toggleSelectIndustry = (industry: string) => {
+    const codes = (grouped[industry] || []).map(s => s.code);
+    if (codes.length === 0) return;
+    const allSelected = codes.every(c => selectedCodes.has(c));
+    setSelectedCodes(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        codes.forEach(c => next.delete(c));
+      } else {
+        codes.forEach(c => next.add(c));
+      }
+      return next;
+    });
+  };
+
+  // 行业级批量删除
+  // - selectedOnly=true:  只删本行业已选股票（点击按钮时本行业有勾选）
+  // - selectedOnly=false: 删本行业全部股票（无勾选时）
+  const handleBatchDeleteIndustry = (industry: string, codes: string[], count: number, selectedOnly: boolean) => {
+    if (codes.length === 0) { alert("该行业没有股票"); return; }
+    const verb = selectedOnly ? "已选" : "全部";
+    setConfirmDialog({
+      title: selectedOnly ? "删除本行业已选" : "删除本行业",
+      message: `确定要删除「${industry}」行业的${verb} ${count} 只股票吗？此操作不可撤销。`,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const r = await batchRemoveStocks(codes);
+          console.log("[batchDeleteIndustry] success:", r);
+          alert(r);
+          // 清理可能已失效的勾选
+          setSelectedCodes(prev => {
+            const next = new Set(prev);
+            codes.forEach(c => next.delete(c));
+            return next;
+          });
+          loadAll();
+        } catch (e) {
+          console.error("[batchDeleteIndustry] error:", e);
+          alert(`删除失败: ${e}`);
+        }
+      },
+    });
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedCodes.size === 0) { alert("请先勾选要删除的股票"); return; }
+    const codes = Array.from(selectedCodes);
+    setConfirmDialog({
+      title: "批量删除",
+      message: `确定要删除已勾选的 ${codes.length} 只股票吗？此操作不可撤销。`,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const r = await batchRemoveStocks(codes);
+          console.log("[batchDelete] success:", r);
+          alert(r);
+          setSelectedCodes(new Set());
+          loadAll();
+        } catch (e) {
+          console.error("[batchDelete] error:", e);
+          alert(`批量删除失败: ${e}`);
+        }
+      },
+    });
+  };
+
+  const handleBatchImport = async () => {
+    if (!batchImportText.trim()) { setBatchImportMsg("请输入股票数据"); return; }
+    const lines = batchImportText.trim().split("\n").map(l => l.trim()).filter(Boolean);
+    const stocks: { code: string; name: string; industry: string }[] = [];
+    for (const line of lines) {
+      const parts = line.split(/[\t,，\s]+/).filter(Boolean);
+      if (parts.length >= 1) {
+        stocks.push({
+          code: parts[0].trim(),
+          name: parts[1]?.trim() || parts[0].trim(),
+          industry: parts[2]?.trim() || "其他",
+        });
+      }
+    }
+    if (stocks.length === 0) { setBatchImportMsg("未能解析有效的股票数据"); return; }
+    try {
+      const r = await batchAddStocks(stocks);
+      alert(r);
+      setShowBatchImport(false);
+      setBatchImportText("");
+      setBatchImportMsg("");
+      loadAll();
+    } catch (e) { alert(`导入失败: ${e}`); }
   };
 
   const inputStyle = {
@@ -148,6 +300,13 @@ export default function Dashboard() {
           }}>
             + 添加股票
           </button>
+          <button onClick={() => setShowBatchImport(!showBatchImport)} style={{
+            padding: "8px 16px", background: "#fff", color: "#8b5cf6",
+            border: "1px solid #8b5cf6", borderRadius: 8, cursor: "pointer",
+            fontSize: 12, fontWeight: 500,
+          }}>
+            📥 批量导入
+          </button>
           <button onClick={handleUpdate} disabled={updating} style={{
             padding: "8px 18px", background: "var(--primary)", color: "#fff",
             border: "none", borderRadius: 8, cursor: updating ? "not-allowed" : "pointer",
@@ -168,6 +327,27 @@ export default function Dashboard() {
           <div><div style={{ fontSize: 11, marginBottom: 4, color: "var(--text-secondary)" }}>行业</div><input value={addIndustry} onChange={e => setAddIndustry(e.target.value)} placeholder="AI/新能源" style={inputStyle} /></div>
           <button onClick={handleAddStock} style={{ padding: "7px 16px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>确认添加</button>
           {addMsg && <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{addMsg}</span>}
+        </div>
+      )}
+
+      {showBatchImport && (
+        <div style={{
+          background: "#fff", borderRadius: 10, padding: 16, marginBottom: 16,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>批量导入股票</div>
+          <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 8 }}>
+            每行一只股票，格式：代码 名称 行业（用空格或 Tab 分隔），行业可选
+          </div>
+          <textarea value={batchImportText} onChange={e => setBatchImportText(e.target.value)}
+            placeholder={"300750 宁德时代 新能源\n000858 五粮液 白酒\n600519 贵州茅台 白酒"}
+            style={{ ...inputStyle, width: "100%", minHeight: 100, resize: "vertical", fontFamily: "monospace", fontSize: 12 }}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
+            <button onClick={handleBatchImport} style={{ padding: "7px 16px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>确认导入</button>
+            <button onClick={() => { setShowBatchImport(false); setBatchImportText(""); setBatchImportMsg(""); }} style={{ padding: "7px 16px", background: "#fff", color: "#666", border: "1px solid var(--border)", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>取消</button>
+            {batchImportMsg && <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{batchImportMsg}</span>}
+          </div>
         </div>
       )}
 
@@ -214,9 +394,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{stockList.length} 只股票</span>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, alignItems: "center" }}>
+        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+          {stockList.length} 只股票
+          {selectedCodes.size > 0 && (
+            <span style={{ marginLeft: 8, color: "var(--primary)" }}>已选 {selectedCodes.size} 只</span>
+          )}
+        </span>
         <div style={{ display: "flex", gap: 6 }}>
+          {selectedCodes.size > 0 && (
+            <button onClick={handleBatchDelete} style={{ padding: "4px 12px", fontSize: 11, border: "1px solid #ef4444", borderRadius: 4, background: "#fef2f2", color: "#ef4444", cursor: "pointer", fontWeight: 500 }}>
+              批量删除 ({selectedCodes.size})
+            </button>
+          )}
           <button onClick={expandAll} style={{ padding: "4px 12px", fontSize: 11, border: "1px solid var(--border)", borderRadius: 4, background: "#fff", cursor: "pointer" }}>展开全部</button>
           <button onClick={collapseAll} style={{ padding: "4px 12px", fontSize: 11, border: "1px solid var(--border)", borderRadius: 4, background: "#fff", cursor: "pointer" }}>折叠全部</button>
         </div>
@@ -227,6 +417,11 @@ export default function Dashboard() {
         const isOpen = expanded?.[industry] === true;
         const upCount = stocks.filter(s => s.change_pct > 0).length;
         const downCount = stocks.filter(s => s.change_pct < 0).length;
+        const codes = stocks.map(s => s.code);
+        // 本行业是否全部已选（用于"批量选"按钮文字切换）
+        const industryAllSelected = codes.length > 0 && codes.every(c => selectedCodes.has(c));
+        // 本行业已选数量（用于"删除"按钮文案/语义切换）
+        const industrySelectedCount = codes.filter(c => selectedCodes.has(c)).length;
 
         return (
           <div key={industry} style={{ background: "#fff", borderRadius: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", marginBottom: 10, overflow: "hidden" }}>
@@ -235,20 +430,52 @@ export default function Dashboard() {
               <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{industry}</span>
               <span style={{ fontSize: 12, color: "var(--text-secondary)", marginRight: 10 }}>{stocks.length} 只</span>
               <span style={{ fontSize: 12, color: "var(--up)", marginRight: 8 }}>涨{upCount}</span>
-              <span style={{ fontSize: 12, color: "var(--down)" }}>跌{downCount}</span>
+              <span style={{ fontSize: 12, color: "var(--down)", marginRight: 12 }}>跌{downCount}</span>
+              <span
+                onClick={e => { e.stopPropagation(); toggleSelectIndustry(industry); }}
+                style={{ fontSize: 11, color: industryAllSelected ? "var(--primary)" : "var(--text-secondary)", cursor: "pointer", padding: "2px 8px", borderRadius: 4, border: "1px solid " + (industryAllSelected ? "var(--primary)" : "var(--border)"), background: industryAllSelected ? "#eff6ff" : "#fff", marginRight: 6 }}
+                title={industryAllSelected ? "取消选中本行业全部股票" : "选中本行业全部股票"}
+              >
+                {industryAllSelected ? "✓ 已选" : "☐ 批量选"}
+              </span>
+              <span
+                onClick={e => {
+                  e.stopPropagation();
+                  // 行业级删除按钮：有已选时只删已选，否则删该行业全部
+                  if (industrySelectedCount > 0) {
+                    handleBatchDeleteIndustry(
+                      industry,
+                      codes.filter(c => selectedCodes.has(c)),
+                      industrySelectedCount,
+                      true
+                    );
+                  } else {
+                    handleBatchDeleteIndustry(industry, codes, codes.length, false);
+                  }
+                }}
+                style={{ fontSize: 11, color: "#ef4444", cursor: "pointer", textDecoration: "underline", padding: "2px 6px", borderRadius: 4, background: industrySelectedCount > 0 ? "#fee2e2" : "#fef2f2" }}
+                title={industrySelectedCount > 0 ? `删除本行业已选的 ${industrySelectedCount} 只股票` : `删除本行业全部 ${codes.length} 只股票`}
+              >
+                {industrySelectedCount > 0 ? `删除已选 (${industrySelectedCount})` : `删除本行业`}
+              </span>
             </div>
             {isOpen && (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr style={{ background: "#f8f9fa" }}>
-                  {["代码", "名称", "子行业", "现价", "涨跌幅", "评分", "建议", "风险", "操作"].map(h => (
-                    <th key={h} style={{ padding: "7px 8px", borderBottom: "2px solid var(--border)", fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textAlign: "left" }}>{h}</th>
+                  {["", "代码", "名称", "子行业", "现价", "涨跌幅", "评分", "建议", "风险", "操作"].map((h, i) => (
+                    <th key={i} style={{ padding: "7px 4px", borderBottom: "2px solid var(--border)", fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textAlign: "left" }}>
+                      {i === 0 ? <input type="checkbox" checked={selectedCodes.size === stockList.length && stockList.length > 0} onChange={toggleSelectAll} style={{ cursor: "pointer" }} /> : h}
+                    </th>
                   ))}
                 </tr></thead>
                 <tbody>
                   {stocks.map(s => (
                     <Fragment key={s.code}>
                       <tr onClick={() => handleSelect(s.code)} style={{ borderBottom: "1px solid #f0f0f0", cursor: "pointer", background: selected === s.code ? "#f0f7ff" : "transparent", fontSize: 13 }}>
-                        <td style={{ padding: "6px 8px", fontFamily: "monospace" }}>{s.code}</td>
+                        <td style={{ padding: "6px 4px", width: 30 }} onClick={e => e.stopPropagation()}>
+                          <input type="checkbox" checked={selectedCodes.has(s.code)} onChange={() => toggleSelect(s.code)} style={{ cursor: "pointer" }} />
+                        </td>
+                        <td style={{ padding: "6px 4px", fontFamily: "monospace" }}>{s.code}</td>
                         <td style={{ padding: "6px 8px", fontWeight: 500 }}>{s.name}</td>
                         <td style={{ padding: "6px 8px", color: "var(--text-secondary)", fontSize: 11 }}>{s.industry.split("/")[1] || ""}</td>
                         <td style={{ padding: "6px 8px" }}>{s.price ? s.price.toFixed(2) : "-"}</td>
@@ -271,7 +498,7 @@ export default function Dashboard() {
                         </td>
                       </tr>
                       {selected === s.code && indicators && (
-                        <tr><td colSpan={9} style={{ padding: 0 }}>
+                        <tr><td colSpan={10} style={{ padding: 0 }}>
                           <TrendFilterBar indicators={indicators} />
                           <TechnicalPanel indicators={indicators} code={s.code} name={s.name} />
                         </td></tr>
@@ -284,6 +511,39 @@ export default function Dashboard() {
           </div>
         );
       })}
+
+      {confirmDialog && (
+        <div
+          onClick={() => setConfirmDialog(null)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#fff", borderRadius: 10, padding: 24, minWidth: 360, maxWidth: 480,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+            }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10 }}>{confirmDialog.title}</div>
+            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 20, lineHeight: 1.6 }}>
+              {confirmDialog.message}
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setConfirmDialog(null)}
+                style={{ padding: "7px 18px", background: "#fff", color: "#666", border: "1px solid var(--border)", borderRadius: 6, cursor: "pointer", fontSize: 12 }}
+              >取消</button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                style={{ padding: "7px 18px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500 }}
+              >确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

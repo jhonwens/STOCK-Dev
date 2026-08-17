@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import MessageItem, { Message, ToolCall } from "./MessageItem";
+import ToolCallCard from "./ToolCallCard";
 
 export type { Message };
 
@@ -11,56 +12,68 @@ interface Props {
 
 export default function MessageList({ messages, streamingContent, activeToolCalls }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const MAX_VISIBLE = 100;
+  const TRIM_TO = 50;
+  const showTrimNotice = messages.length > MAX_VISIBLE;
+  const visibleMessages = showTrimNotice ? messages.slice(-TRIM_TO) : messages;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent, activeToolCalls]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-      {messages.map((m) => (
-        <MessageItem key={m.id} message={m} />
-      ))}
+    <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", background: "var(--chat-bg)" }}>
+      {showTrimNotice && (
+        <div style={{ textAlign: "center", fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12, padding: "6px 12px", background: "var(--card)", borderRadius: 6, border: "1px solid var(--border)" }}>
+          消息较多，仅显示最近 {TRIM_TO} 条（共 {messages.length} 条）
+        </div>
+      )}
 
-      {activeToolCalls && activeToolCalls.length > 0 && (
-        <div className="mb-2">
-          {activeToolCalls.map((tc, i) => (
-            <div key={i} className="bg-purple-50 border border-purple-200 rounded p-2 mb-1 text-sm">
-              <div className="flex items-center gap-2">
-                <span>🔧</span>
-                <span className="font-mono">{tc.name}</span>
-                <span className="text-gray-500 text-xs">({JSON.stringify(tc.args)})</span>
-                <span className="ml-auto">
-                  {tc.status === "running" && <span className="animate-pulse">⏳</span>}
-                  {tc.status === "success" && "✅"}
-                  {tc.status === "error" && "❌"}
-                  {tc.durationMs && <span className="text-xs text-gray-400 ml-1">{tc.durationMs}ms</span>}
+      <div style={{ maxWidth: 800, margin: "0 auto" }}>
+        {visibleMessages.map((m) => (
+          <div key={m.id} className="message-enter">
+            <MessageItem message={m} />
+          </div>
+        ))}
+
+        {activeToolCalls && activeToolCalls.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            {activeToolCalls.map((tc, i) => (
+              <ToolCallCard key={i} toolCall={tc} />
+            ))}
+          </div>
+        )}
+
+        {streamingContent && (
+          <div className="message-enter" style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{
+              maxWidth: "85%",
+              background: "var(--card)",
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontSize: 13, color: "var(--text-secondary)" }}>
+                <span style={{
+                  width: 24, height: 24, borderRadius: 6,
+                  background: "linear-gradient(135deg, #8b5cf6, #6366f1)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, color: "#fff",
+                }}>AI</span>
+                <span style={{ fontWeight: 500, color: "var(--text)" }}>智能分析</span>
+              </div>
+              <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap", color: "var(--text)" }}>
+                {streamingContent}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, marginLeft: 4 }}>
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
                 </span>
               </div>
-              {tc.resultPreview && (
-                <pre className="mt-1 text-xs text-gray-600 whitespace-pre-wrap max-h-32 overflow-y-auto">
-                  {tc.resultPreview}
-                </pre>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {streamingContent && (
-        <div className="flex justify-start">
-          <div className="max-w-[80%] bg-white border border-gray-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2 text-sm text-gray-500">
-              <span>🤖</span>
-              <span>Agent</span>
-            </div>
-            <div className="prose prose-sm max-w-none whitespace-pre-wrap">
-              {streamingContent}
-              <span className="inline-block animate-pulse">▍</span>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div ref={bottomRef} />
     </div>

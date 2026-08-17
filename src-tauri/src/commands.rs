@@ -1,8 +1,31 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use rusqlite::Connection;
+
+static APP_ROOT: OnceLock<PathBuf> = OnceLock::new();
+
+/// 初始化应用根路径（在 main.rs 启动时调用一次）
+/// - 打包模式：使用 .app bundle 内的 Resources 目录
+/// - 开发模式：使用 CARGO_MANIFEST_DIR 的父目录（项目根）
+pub fn init_app_root(bundled_root: Option<PathBuf>) {
+    if let Some(root) = bundled_root {
+        APP_ROOT.get_or_init(|| root);
+    } else {
+        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let root = manifest.parent().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        APP_ROOT.get_or_init(|| root);
+    }
+}
+
+pub fn project_root() -> PathBuf {
+    APP_ROOT.get().cloned().unwrap_or_else(|| {
+        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        manifest.parent().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."))
+    })
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StockSummary {
@@ -66,13 +89,6 @@ pub struct PortfolioStock {
     pub risk_level: String,
 }
 
-// ⚠️ Batch 2 Task 7 修订: db_path() 和 project_root() 改为 pub，
-// 以便 agent_commands.rs 和 agent_bridge.rs 复用
-pub fn project_root() -> PathBuf {
-    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    manifest.parent().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."))
-}
-
 pub fn db_path() -> PathBuf {
     if let Ok(path) = std::env::var("STOCK_DB_PATH") {
         return PathBuf::from(path);
@@ -80,19 +96,78 @@ pub fn db_path() -> PathBuf {
     project_root().join("backend").join("stock-analyst").join("data").join("stock_data.db")
 }
 
-fn python_script_dir() -> Result<PathBuf, String> {
-    let dir = project_root().join("backend").join("stock-analyst").join("scripts");
-    if dir.exists() {
-        Ok(dir)
+/// 构建后端可执行文件的同步命令
+/// - 打包模式：STOCK_BACKEND_RUNNER -> backend-runner（编译后的独立可执行文件）
+/// - 开发模式：python3 backend/pyentry/entry.py
+///
+/// 关键：子进程不会自动继承 Rust 进程的环境变量（特别是 Tauri 启动后
+/// 通过 set_var 设置的）。所以这里显式传入 STOCK_DB_PATH/STOCK_CONFIG_DIR
+/// 等关键变量，确保 Python 脚本能正确找到数据库和配置文件。
+pub fn backend_cmd_sync() -> std::process::Command {
+    let mut cmd = if let Ok(runner) = std::env::var("STOCK_BACKEND_RUNNER") {
+        std::process::Command::new(runner)
     } else {
-        Err(format!("Script directory not found: {}", dir.display()))
+        let entry = project_root().join("backend").join("pyentry").join("entry.py");
+        let mut cmd = std::process::Command::new("python3");
+        cmd.arg(entry);
+        cmd
+    };
+    inject_runtime_env(&mut cmd);
+    cmd
+}
+
+/// 构建后端可执行文件的异步命令（用于 async 函数）
+pub fn backend_cmd_async() -> tokio::process::Command {
+    let mut cmd = if let Ok(runner) = std::env::var("STOCK_BACKEND_RUNNER") {
+        tokio::process::Command::new(runner)
+    } else {
+        let entry = project_root().join("backend").join("pyentry").join("entry.py");
+        let mut cmd = tokio::process::Command::new("python3");
+        cmd.arg(entry);
+        cmd
+    };
+    inject_runtime_env_async(&mut cmd);
+    cmd
+}
+
+/// 同步命令注入运行时环境变量
+fn inject_runtime_env(cmd: &mut std::process::Command) {
+    for key in [
+        "STOCK_PROJECT_ROOT",
+        "STOCK_BACKEND_RUNNER",
+        "STOCK_DB_PATH",
+        "STOCK_CONFIG_DIR",
+        "STOCK_LIST_PATH",
+        "SSL_CERT_FILE",
+        "REQUESTS_CA_BUNDLE",
+    ] {
+        if let Ok(val) = std::env::var(key) {
+            cmd.env(key, val);
+        }
+    }
+}
+
+/// 异步命令注入运行时环境变量
+fn inject_runtime_env_async(cmd: &mut tokio::process::Command) {
+    for key in [
+        "STOCK_PROJECT_ROOT",
+        "STOCK_BACKEND_RUNNER",
+        "STOCK_DB_PATH",
+        "STOCK_CONFIG_DIR",
+        "STOCK_LIST_PATH",
+        "SSL_CERT_FILE",
+        "REQUESTS_CA_BUNDLE",
+    ] {
+        if let Ok(val) = std::env::var(key) {
+            cmd.env(key, val);
+        }
     }
 }
 
 fn load_stock_list() -> Result<Vec<StockListEntry>, String> {
     let path = stock_list_path();
     let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read stock_list.yaml: {}", e))?;
+        .map_err(|e| format!("读取 stock 列表失败: {}", e))?;
     let parsed: serde_yaml::Value =
         serde_yaml::from_str(&content).map_err(|e| e.to_string())?;
     let stocks = parsed["stocks"]
@@ -110,6 +185,25 @@ fn load_stock_list() -> Result<Vec<StockListEntry>, String> {
 }
 
 fn stock_list_path() -> PathBuf {
+    // 打包模式：优先读可写应用数据目录中的 stock_list.yaml（支持增删股票）
+    if let Ok(path) = std::env::var("STOCK_LIST_PATH") {
+        let pb = PathBuf::from(&path);
+        if pb.exists() {
+            return pb;
+        }
+        // 首次启动：从 bundle 资源拷贝初始股票列表到可写目录
+        if let Some(parent) = pb.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let bundled = project_root().join("backend").join("stock-analyst").join("resource").join("stock_list.yaml");
+        if bundled.exists() {
+            let _ = std::fs::copy(&bundled, &pb);
+        } else {
+            let _ = std::fs::write(&pb, "stocks: []\n");
+        }
+        return pb;
+    }
+    // 开发模式 / 兜底：项目目录下的 stock_list.yaml
     project_root().join("backend").join("stock-analyst").join("resource").join("stock_list.yaml")
 }
 
@@ -155,7 +249,8 @@ pub fn get_market_movers() -> Result<MarketOverview, String> {
 
     let mut stmt = conn
         .prepare(
-            "SELECT code, name, price, change_pct, COALESCE(volume, 0) FROM stock_realtime GROUP BY code ORDER BY change_pct DESC LIMIT 10"
+            "SELECT code, name, price, change_pct, COALESCE(volume, 0) \
+             FROM stock_realtime GROUP BY code ORDER BY change_pct DESC LIMIT 10"
         )
         .map_err(|e| e.to_string())?;
     let top_gainers = stmt
@@ -174,7 +269,8 @@ pub fn get_market_movers() -> Result<MarketOverview, String> {
 
     let mut stmt = conn
         .prepare(
-            "SELECT code, name, price, change_pct, COALESCE(volume, 0) FROM stock_realtime GROUP BY code ORDER BY change_pct ASC LIMIT 10"
+            "SELECT code, name, price, change_pct, COALESCE(volume, 0) \
+             FROM stock_realtime GROUP BY code ORDER BY change_pct ASC LIMIT 10"
         )
         .map_err(|e| e.to_string())?;
     let top_losers = stmt
@@ -252,28 +348,34 @@ pub fn get_technical_indicators(code: String) -> Result<serde_json::Value, Strin
 
 #[tauri::command]
 pub async fn run_analysis() -> Result<String, String> {
-    let script_dir = python_script_dir()?;
-    let output = tokio::process::Command::new("python3")
-        .arg("main.py")
-        .arg("--mode")
-        .arg("quick")
-        .current_dir(&script_dir)
-        .output()
-        .await
-        .map_err(|e| format!("Failed to start Python: {}", e))?;
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    } else {
-        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    use tokio::time::{timeout, Duration};
+    let cmd_fut = backend_cmd_async()
+        .arg("script").arg("main.py").arg("--mode").arg("quick")
+        .output();
+    eprintln!("[run_analysis] starting backend (timeout=600s)...");
+    match timeout(Duration::from_secs(600), cmd_fut).await {
+        Ok(Ok(output)) => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            eprintln!("[run_analysis] stdout:\n{}", stdout);
+            if !stderr.is_empty() {
+                eprintln!("[run_analysis] stderr:\n{}", stderr);
+            }
+            if output.status.success() {
+                Ok(stdout.to_string())
+            } else {
+                Err(stderr.to_string())
+            }
+        }
+        Ok(Err(e)) => Err(format!("Failed to start backend: {}", e)),
+        Err(_) => Err("数据更新超时（>600秒），请稍后重试".to_string()),
     }
 }
 
 #[tauri::command]
 pub async fn run_candidate_llm() -> Result<String, String> {
-    let script_dir = python_script_dir()?;
-    let output = tokio::process::Command::new("python3")
-        .arg("candidate_recommend.py")
-        .current_dir(&script_dir)
+    let output = backend_cmd_async()
+        .arg("script").arg("candidate_recommend.py")
         .output()
         .await
         .map_err(|e| format!("Failed: {}", e))?;
@@ -404,17 +506,11 @@ pub fn export_candidate_md(analysis_json: String) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn run_llm_analysis(scope: String) -> Result<String, String> {
-    let script_dir = python_script_dir()?;
-    let output = tokio::process::Command::new("python3")
-        .arg("main.py")
-        .arg("--mode")
-        .arg("llm")
-        .arg("--scope")
-        .arg(&scope)
-        .current_dir(&script_dir)
+    let output = backend_cmd_async()
+        .arg("script").arg("main.py").arg("--mode").arg("llm").arg("--scope").arg(&scope)
         .output()
         .await
-        .map_err(|e| format!("Failed to start Python: {}", e))?;
+        .map_err(|e| format!("Failed to start backend: {}", e))?;
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     } else {
@@ -437,50 +533,64 @@ pub fn save_llm_config(url: String, api_key: String, model: String, temperature:
     call_llm_cli(&["save", &payload.to_string()])
 }
 
+fn llm_config_path() -> PathBuf {
+    if let Ok(dir) = std::env::var("STOCK_CONFIG_DIR") {
+        PathBuf::from(dir).join("llm_config.json")
+    } else {
+        project_root().join("config").join("llm_config.json")
+    }
+}
+
+fn read_llm_config() -> Result<serde_json::Value, String> {
+    let path = llm_config_path();
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| format!("读取 LLM 配置失败: {}", e))?;
+    serde_json::from_str(&content).map_err(|e| e.to_string())
+}
+
+fn write_llm_config(value: &serde_json::Value) -> Result<(), String> {
+    let path = llm_config_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let content = serde_json::to_string_pretty(value).map_err(|e| e.to_string())?;
+    std::fs::write(&path, content).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub fn load_llm_config() -> Result<String, String> {
     // 向后兼容：返回当前激活的单个模型
-    call_llm_cli(&["get-active"])
+    let config = read_llm_config()?;
+    // JSON 数组格式 → 取第一个 enabled=true 的对象
+    let active = config.as_array()
+        .and_then(|arr| arr.iter().find(|m| m.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false)))
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
+    Ok(serde_json::to_string(&active).unwrap_or_else(|_| "{}".to_string()))
 }
 
-/// 通过 Python CLI 转发 LLM 配置命令
+/// 通过 Python CLI 转发 LLM 配置命令（写操作和测试连接）
 fn call_llm_cli(args: &[&str]) -> Result<String, String> {
-    use std::process::Command;
-    let py = llm_python_path();
-    let cli = llm_cli_path();
+    let mut cmd = backend_cmd_sync();
+    cmd.arg("script").arg("llm_config_cli.py");
+    cmd.args(args);
 
-    let output = Command::new(&py)
-        .arg(&cli)
-        .args(args)
+    let output = cmd
         .output()
-        .map_err(|e| format!("调用 Python 失败 ({}): {}", py.display(), e))?;
+        .map_err(|e| format!("调用后端失败: {}", e))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("Python CLI 错误: {}", stderr.trim()));
+        return Err(format!("CLI 错误: {}", stderr.trim()));
     }
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
-}
-
-fn llm_python_path() -> PathBuf {
-    if let Ok(p) = std::env::var("STOCK_PYTHON") {
-        return PathBuf::from(p);
-    }
-    PathBuf::from("python3")
-}
-
-fn llm_cli_path() -> PathBuf {
-    project_root()
-        .join("backend")
-        .join("stock-analyst")
-        .join("scripts")
-        .join("llm_config_cli.py")
 }
 
 // 多模型管理新命令
 #[tauri::command]
 pub fn list_llm_models() -> Result<String, String> {
-    call_llm_cli(&["list"])
+    let config = read_llm_config()?;
+    Ok(serde_json::to_string(&config).unwrap_or_else(|_| "[]".to_string()))
 }
 
 #[tauri::command]
@@ -621,8 +731,12 @@ pub fn add_stock_to_list(code: String, name: String, industry: String) -> Result
     if entries.iter().any(|e| e.code == code) {
         return Err("该股票已在列表中".to_string());
     }
-    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let mut value: serde_yaml::Value = serde_yaml::from_str(&content).map_err(|e| e.to_string())?;
+    let content = std::fs::read_to_string(&path).unwrap_or_default();
+    let mut value: serde_yaml::Value = serde_yaml::from_str(&content).unwrap_or(serde_yaml::Value::Mapping({
+        let mut m = serde_yaml::Mapping::new();
+        m.insert(serde_yaml::Value::String("stocks".into()), serde_yaml::Value::Sequence(vec![]));
+        m
+    }));
     let new_item = serde_yaml::Value::Mapping({
         let mut m = serde_yaml::Mapping::new();
         m.insert(serde_yaml::Value::String("code".into()), serde_yaml::Value::String(code.clone()));
@@ -634,6 +748,9 @@ pub fn add_stock_to_list(code: String, name: String, industry: String) -> Result
         stocks.push(new_item);
     }
     let out = serde_yaml::to_string(&value).map_err(|e| e.to_string())?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
     std::fs::write(&path, out).map_err(|e| e.to_string())?;
     Ok(format!("✅ 已添加 {}", code))
 }
@@ -641,8 +758,12 @@ pub fn add_stock_to_list(code: String, name: String, industry: String) -> Result
 #[tauri::command]
 pub fn remove_stock_from_list(code: String) -> Result<String, String> {
     let path = stock_list_path();
-    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let mut value: serde_yaml::Value = serde_yaml::from_str(&content).map_err(|e| e.to_string())?;
+    let content = std::fs::read_to_string(&path).unwrap_or_default();
+    let mut value: serde_yaml::Value = serde_yaml::from_str(&content).unwrap_or(serde_yaml::Value::Mapping({
+        let mut m = serde_yaml::Mapping::new();
+        m.insert(serde_yaml::Value::String("stocks".into()), serde_yaml::Value::Sequence(vec![]));
+        m
+    }));
     let removed = if let Some(stocks) = value["stocks"].as_sequence_mut() {
         let len_before = stocks.len();
         stocks.retain(|v| v["code"].as_str().unwrap_or("") != code);
@@ -654,12 +775,109 @@ pub fn remove_stock_from_list(code: String) -> Result<String, String> {
         return Err("未找到该股票".to_string());
     }
     let out = serde_yaml::to_string(&value).map_err(|e| e.to_string())?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
     std::fs::write(&path, out).map_err(|e| e.to_string())?;
 
     let conn = Connection::open(db_path()).map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM stock_score WHERE code=?1", [&code]).ok();
-    conn.execute("DELETE FROM stock_realtime WHERE code=?1", [&code]).ok();
+    clean_stock_data(&conn, &code);
     Ok(format!("✅ 已移除 {}", code))
+}
+
+fn clean_stock_data(conn: &rusqlite::Connection, code: &str) {
+    for table in &[
+        "stock_realtime", "stock_fund_flow", "stock_finance", "stock_news",
+        "stock_trend", "stock_alert", "stock_history", "stock_limit_up",
+        "stock_technical", "stock_pattern", "stock_chan_theory",
+        "stock_portfolio", "stock_llm_report", "stock_score",
+    ] {
+        conn.execute(&format!("DELETE FROM {} WHERE code=?1", table), rusqlite::params![code]).ok();
+    }
+}
+
+#[tauri::command]
+pub fn batch_remove_stocks(codes: Vec<String>) -> Result<String, String> {
+    eprintln!("[batch_remove_stocks] called with {} codes: {:?}", codes.len(), codes);
+    if codes.is_empty() {
+        return Err("请选择至少一只股票".to_string());
+    }
+    let path = stock_list_path();
+    eprintln!("[batch_remove_stocks] stock_list_path: {:?}", path);
+    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let mut value: serde_yaml::Value = serde_yaml::from_str(&content).map_err(|e| e.to_string())?;
+    let removed_count = if let Some(stocks) = value["stocks"].as_sequence_mut() {
+        let len_before = stocks.len();
+        stocks.retain(|v| !codes.contains(&v["code"].as_str().unwrap_or("").to_string()));
+        len_before - stocks.len()
+    } else {
+        0
+    };
+    if removed_count == 0 {
+        return Err("未找到匹配的股票".to_string());
+    }
+    let out = serde_yaml::to_string(&value).map_err(|e| e.to_string())?;
+    std::fs::write(&path, out).map_err(|e| e.to_string())?;
+
+    let conn = Connection::open(db_path()).map_err(|e| e.to_string())?;
+    for code in &codes {
+        clean_stock_data(&conn, code);
+    }
+    Ok(format!("✅ 已批量移除 {} 只股票", removed_count))
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct StockInput {
+    pub code: String,
+    pub name: String,
+    pub industry: String,
+}
+
+#[tauri::command]
+pub fn batch_add_stocks(stocks: Vec<StockInput>) -> Result<String, String> {
+    if stocks.is_empty() {
+        return Err("请提供至少一只股票".to_string());
+    }
+    let path = stock_list_path();
+    let entries = load_stock_list().unwrap_or_default();
+    let existing: std::collections::HashSet<String> = entries.iter().map(|e| e.code.clone()).collect();
+    let mut added = 0;
+    let mut skipped = 0;
+
+    let content = std::fs::read_to_string(&path).unwrap_or_default();
+    let mut value: serde_yaml::Value = serde_yaml::from_str(&content).unwrap_or(serde_yaml::Value::Mapping({
+        let mut m = serde_yaml::Mapping::new();
+        m.insert(serde_yaml::Value::String("stocks".into()), serde_yaml::Value::Sequence(vec![]));
+        m
+    }));
+
+    for s in &stocks {
+        if existing.contains(&s.code) {
+            skipped += 1;
+            continue;
+        }
+        let new_item = serde_yaml::Value::Mapping({
+            let mut m = serde_yaml::Mapping::new();
+            m.insert(serde_yaml::Value::String("code".into()), serde_yaml::Value::String(s.code.clone()));
+            m.insert(serde_yaml::Value::String("name".into()), serde_yaml::Value::String(s.name.clone()));
+            m.insert(serde_yaml::Value::String("industry".into()), serde_yaml::Value::String(s.industry.clone()));
+            m
+        });
+        if let Some(stocks) = value["stocks"].as_sequence_mut() {
+            stocks.push(new_item);
+        }
+        added += 1;
+    }
+
+    if added == 0 {
+        return Ok("所有股票已在列表中，无需添加".to_string());
+    }
+    let out = serde_yaml::to_string(&value).map_err(|e| e.to_string())?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(&path, out).map_err(|e| e.to_string())?;
+    Ok(format!("✅ 成功添加 {} 只股票{}", added, if skipped > 0 { format!("，{} 只已存在已跳过", skipped) } else { String::new() }))
 }
 
 #[tauri::command]
@@ -721,11 +939,8 @@ pub fn remove_portfolio_stock(id: i64) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn run_portfolio_llm(code: String) -> Result<String, String> {
-    let script_dir = python_script_dir()?;
-    let output = tokio::process::Command::new("python3")
-        .arg("portfolio_analysis.py")
-        .arg(&code)
-        .current_dir(&script_dir)
+    let output = backend_cmd_async()
+        .arg("script").arg("portfolio_analysis.py").arg(&code)
         .output()
         .await
         .map_err(|e| format!("Failed: {}", e))?;
@@ -734,6 +949,17 @@ pub async fn run_portfolio_llm(code: String) -> Result<String, String> {
     } else {
         Err(String::from_utf8_lossy(&output.stderr).to_string())
     }
+}
+
+#[tauri::command]
+pub fn update_stock_score_from_llm(code: String, suggestion: String, risk_level: String) -> Result<String, String> {
+    let conn = Connection::open(&db_path()).map_err(|e| e.to_string())?;
+    let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    conn.execute(
+        "INSERT OR REPLACE INTO stock_score (code, score, suggestion, risk_level, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+        rusqlite::params![code, 0, suggestion, risk_level, now],
+    ).map_err(|e| e.to_string())?;
+    Ok(format!("✅ 已更新 {} 的建议", code))
 }
 
 #[tauri::command]
@@ -756,12 +982,8 @@ pub fn search_stock(query: String) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn run_stock_insight(code: String) -> Result<String, String> {
-    let script_dir = python_script_dir()?;
-    let output = tokio::process::Command::new("python3")
-        .arg("stock_insight.py")
-        .arg("--code")
-        .arg(&code)
-        .current_dir(&script_dir)
+    let output = backend_cmd_async()
+        .arg("script").arg("stock_insight.py").arg("--code").arg(&code)
         .output()
         .await
         .map_err(|e| format!("Failed: {}", e))?;
@@ -877,6 +1099,132 @@ pub fn export_stock_insight_md(code: String, name: String, analysis_json: String
     let file_path = reports_dir.join(&file_name);
     std::fs::write(&file_path, &md).map_err(|e| format!("保存文件失败: {}", e))?;
     Ok(file_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn test_export_msg(message_id: i32, format: String) -> Result<String, String> {
+    use std::io::Write;
+
+    let conn = Connection::open(db_path()).map_err(|e| format!("DB:{}", e))?;
+    let (content, _, session_title): (String, String, String) = conn
+        .query_row(
+            "SELECT m.content, m.created_at, s.title \
+             FROM agent_message m JOIN agent_session s ON m.session_id = s.id WHERE m.id = ?1",
+            rusqlite::params![message_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .map_err(|e| format!("消息不存在({})", e))?;
+
+    let name: String = session_title.chars().filter(|c| c.is_alphanumeric() || *c == '_').take(20).collect();
+    let ts = chrono::Local::now().format("%Y%m%d_%H%M%S");
+    let filename = format!("{}_{}_{}.{}", name, message_id, ts, format);
+
+    let downloads = dirs::download_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
+    let dir = downloads.join("衡势价值导出");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("目录:{}", e))?;
+    let path = dir.join(&filename);
+
+    let md = format!("# {}\n\n{}\n", session_title, content);
+    let mut f = std::fs::File::create(&path).map_err(|e| format!("文件:{}", e))?;
+    f.write_all(md.as_bytes()).map_err(|e| format!("写入:{}", e))?;
+
+    let _ = std::process::Command::new("open").arg("-R").arg(&path).spawn();
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+#[allow(unused_variables)]
+pub fn export_agent_message(
+    app: tauri::AppHandle,
+    session_id: String,
+    message_id: i32,
+    format: String,
+) -> Result<String, String> {
+    use std::io::Write;
+
+    let conn = Connection::open(db_path()).map_err(|e| format!("DB:{}", e))?;
+    let (content, tool_calls_raw, created_at, session_title): (String, Option<String>, String, String) = conn
+        .query_row(
+            "SELECT m.content, m.tool_calls, m.created_at, s.title \
+             FROM agent_message m JOIN agent_session s ON m.session_id = s.id WHERE m.id = ?1",
+            rusqlite::params![message_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .map_err(|e| format!("消息不存在({})", e))?;
+    let tool_calls_raw = tool_calls_raw.unwrap_or_default();
+
+    let safe_title: String = session_title.chars().filter(|c| c.is_alphanumeric() || *c == '_' || *c == '-').take(20).collect();
+    let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S");
+    let default_name = format!("{}_{}_{}.{}", safe_title, message_id, timestamp, format);
+
+    // 保存到下载目录 + Finder 打开（不考虑对话框）
+    let d = dirs::download_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
+    let dir = d.join("衡势价值导出");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("目录:{}", e))?;
+    let save_path = dir.join(&default_name);
+
+    let mut file = std::fs::File::create(&save_path).map_err(|e| format!("文件创建失败: {}", e))?;
+
+    if format == "html" {
+        let tc_html = if tool_calls_raw != "[]" && tool_calls_raw != "null" {
+            format!("<h2>工具调用</h2><pre>{}</pre>", tool_calls_raw)
+        } else { String::new() };
+        let body_html = comrak::markdown_to_html(&content, &comrak::Options::default());
+        write!(file, "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\"><title>{}</title>
+<style>
+  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif; max-width: 900px; margin: 40px auto; padding: 0 24px; color: #1f2937; line-height: 1.8; font-size: 15px; }}
+  h1 {{ font-size: 26px; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; }}
+  h2 {{ font-size: 20px; margin-top: 32px; border-bottom: 1px solid #f3f4f6; padding-bottom: 6px; }}
+  h3 {{ font-size: 17px; margin-top: 24px; }}
+  p {{ margin: 12px 0; }}
+  code {{ background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }}
+  pre {{ background: #1e1e2e; color: #cdd6f4; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; }}
+  pre code {{ background: none; padding: 0; }}
+  table {{ border-collapse: collapse; width: 100%; margin: 16px 0; }}
+  th, td {{ border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; font-size: 13px; }}
+  th {{ background: #f9fafb; font-weight: 600; }}
+  hr {{ border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }}
+  blockquote {{ border-left: 4px solid #3b82f6; margin: 12px 0; padding: 8px 16px; background: #f9fafb; }}
+  ul, ol {{ padding-left: 24px; }}
+  .meta {{ color: #6b7280; font-size: 13px; margin-bottom: 24px; }}
+</style>
+</head><body><h1>{}</h1><div class=\"meta\">生成时间: {}</div>{}{}</body></html>",
+            session_title, session_title, created_at, body_html, tc_html
+        ).map_err(|e| format!("写入失败: {}", e))?;
+    } else {
+        let tc_md = if tool_calls_raw != "[]" && tool_calls_raw != "null" {
+            format!("\n## 工具调用\n\n```json\n{}\n```\n", tool_calls_raw)
+        } else { String::new() };
+        write!(file, "# {}\n\n**生成时间**: {}\n\n{}{}\n", session_title, created_at, content, tc_md)
+            .map_err(|e| format!("写入失败: {}", e))?;
+    }
+
+    let _ = std::process::Command::new("open").arg("-R").arg(&save_path).spawn();
+    Ok(save_path.to_string_lossy().to_string())
+}
+
+#[cfg(target_os = "macos")]
+fn try_save_dialog(_app: &tauri::AppHandle, default_name: &str, _format: &str) -> Option<std::path::PathBuf> {
+    let script = format!(
+        "POSIX path of (choose file name with prompt \"导出分析结果\" default name \"{}\")",
+        default_name.replace("\"", "\\\"")
+    );
+    std::process::Command::new("osascript")
+        .arg("-e")
+        .arg(&script)
+        .output()
+        .ok()
+        .and_then(|o| {
+            if o.status.success() {
+                let p = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                if !p.is_empty() { Some(std::path::PathBuf::from(p)) } else { None }
+            } else { None }
+        })
+}
+
+#[cfg(not(target_os = "macos"))]
+fn try_save_dialog(_app: &tauri::AppHandle, _default_name: &str, _format: &str) -> Option<std::path::PathBuf> {
+    None
 }
 
 // ============================================================================

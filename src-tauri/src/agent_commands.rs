@@ -1,34 +1,6 @@
-use serde::{Deserialize, Serialize};
 use tauri::Emitter;
 use serde_json::json;
-// ⚠️ Plan 修订 (Batch 2 #1): 不要重新定义 db_path()。
-// 现有 src-tauri/src/commands.rs 已有 project_root() + db_path() 工具函数，
-// 支持 STOCK_DB_PATH 环境变量覆盖。
-// 这里直接 use 即可：
 use crate::commands::db_path;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AgentSession {
-    pub id: String,
-    pub title: String,
-    pub created_at: String,
-    pub updated_at: String,
-    pub message_count: i32,
-    pub is_pinned: bool,
-    pub last_message: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AgentMessage {
-    pub id: i32,
-    pub session_id: String,
-    pub role: String,
-    pub content: Option<String>,
-    pub tool_calls: Option<serde_json::Value>,
-    pub created_at: String,
-    pub token_count: Option<i32>,
-    pub duration_ms: Option<i32>,
-}
 
 #[tauri::command]
 pub fn agent_create_session(title: Option<String>) -> Result<serde_json::Value, String> {
@@ -66,8 +38,6 @@ pub async fn agent_send_message(
     session_id: String,
     text: String,
 ) -> Result<i32, String> {
-    // 异步执行 Python agent，把每个 SSE 事件 emit 到前端
-    use tauri::Manager;
     let event_name = format!("agent_stream_{}", session_id);
     let window_clone = window.clone();
     let db_path = db_path().to_str().unwrap().to_string();

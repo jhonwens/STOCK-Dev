@@ -1,34 +1,4 @@
 stocks:
-- code: '300750'
-  industry: AI/新能源
-  name: 宁德时代
-- code: '002415'
-  industry: AI/安防
-  name: 海康威视
-- code: '300308'
-  industry: AI/光模块
-  name: 中际旭创
-- code: '688041'
-  industry: AI/CPU
-  name: 海光信息
-- code: '688256'
-  industry: AI/芯片
-  name: 寒武纪
-- code: '688981'
-  industry: AI/光计算
-  name: 光源技术
-- code: '300667'
-  industry: AI/大模型
-  name: 科大讯飞
-- code: '002230'
-  industry: AI/软件
-  name: 科大国创
-- code: '300044'
-  industry: AI/机器人
-  name: 赛为智能
-- code: '300024'
-  industry: AI/工业机器人
-  name: 机器人
 - code: '603986'
   industry: 芯片/存储
   name: 兆易创新
@@ -65,7 +35,7 @@ stocks:
 - code: '603160'
   industry: 芯片/指纹
   name: 汇顶科技
-- code: 002459
+- code: '002459'
   industry: 芯片/光伏组件
   name: 晶澳科技
 - code: '688390'
@@ -95,16 +65,16 @@ stocks:
 - code: '300296'
   industry: 新能源车/智能驾驶
   name: 德赛西威
-- code: 002920
+- code: '002920'
   industry: 新能源车/座舱
   name: 德赛西威
-- code: 002594
+- code: '002594'
   industry: 新能源车/整车
   name: 比亚迪
 - code: '300124'
   industry: 新能源车/电机
   name: 汇川技术
-- code: 002812
+- code: '002812'
   industry: 新能源车/电池隔膜
   name: 恩捷股份
 - code: '300014'
@@ -116,7 +86,7 @@ stocks:
 - code: '002460'
   industry: 新能源车/锂资源
   name: 赣锋锂业
-- code: 002709
+- code: '002709'
   industry: 新能源车/电解液
   name: 天赐材料
 - code: '300450'
@@ -125,13 +95,13 @@ stocks:
 - code: '002074'
   industry: 新能源车/电池
   name: 国轩高科
-- code: 002850
+- code: '002850'
   industry: 新能源车/结构件
   name: 科达利
 - code: '600438'
   industry: 光伏/硅料
   name: 通威股份
-- code: 002129
+- code: '002129'
   industry: 光伏/硅片
   name: 中环股份
 - code: '300274'
@@ -164,36 +134,6 @@ stocks:
 - code: '600011'
   industry: 光伏/电力
   name: 华能国际
-- code: '601398'
-  industry: 银行/国有大行
-  name: 工商银行
-- code: '601939'
-  industry: 银行/国有大行
-  name: 建设银行
-- code: '601988'
-  industry: 银行/国有大行
-  name: 中国银行
-- code: '600036'
-  industry: 银行/零售
-  name: 招商银行
-- code: '002142'
-  industry: 银行/城商行
-  name: 宁波银行
-- code: '601166'
-  industry: 银行/股份行
-  name: 兴业银行
-- code: '600016'
-  industry: 银行/股份行
-  name: 民生银行
-- code: '601288'
-  industry: 银行/国有大行
-  name: 农业银行
-- code: '000001'
-  industry: 银行/股份行
-  name: 平安银行
-- code: '601328'
-  industry: 银行/国有大行
-  name: 交通银行
 - code: '000002'
   industry: 房地产/住宅
   name: 万科A
@@ -209,7 +149,7 @@ stocks:
 - code: '601155'
   industry: 房地产/住宅
   name: 新城控股
-- code: 000069
+- code: '000069'
   industry: 房地产/文旅
   name: 华侨城A
 - code: '000651'
@@ -221,7 +161,7 @@ stocks:
 - code: '600690'
   industry: 制造/家电
   name: 青岛海尔
-- code: 000786
+- code: '000786'
   industry: 制造/建材
   name: 北新建材
 - code: '601689'
@@ -236,7 +176,7 @@ stocks:
 - code: '600585'
   industry: 制造/水泥
   name: 海螺水泥
-- code: 000876
+- code: '000876'
   industry: 制造/农牧
   name: 新希望
 - code: '600887'
@@ -281,10 +221,10 @@ stocks:
 - code: '600519'
   industry: 消费/白酒龙头
   name: 贵州茅台
-- code: 000858
+- code: '000858'
   industry: 消费/白酒
   name: 五粮液
-- code: 000596
+- code: '000596'
   industry: 消费/白酒
   name: 古井贡酒
 - code: '002304'
@@ -296,7 +236,7 @@ stocks:
 - code: '603589'
   industry: 消费/白酒
   name: 金种子酒
-- code: 000869
+- code: '000869'
   industry: 消费/红酒
   name: 张裕A
 - code: '603288'
@@ -344,7 +284,7 @@ stocks:
 - code: '002463'
   industry: PCB/汽车PCB
   name: 沪电股份
-- code: 002916
+- code: '002916'
   industry: PCB/封装基板
   name: 深南电路
 - code: '300476'
@@ -356,7 +296,7 @@ stocks:
 - code: '300394'
   industry: PCB/光模块
   name: 天孚通信
-- code: 000807
+- code: '000807'
   industry: PCB/材料
   name: 云铝股份
 - code: '000630'
@@ -380,13 +320,13 @@ stocks:
 - code: '600111'
   industry: 有色/稀土
   name: 北方稀土
-- code: 000831
+- code: '000831'
   industry: 有色/稀土
   name: 稀土
 - code: '600362'
   industry: 有色/铜
   name: 江西铜业
-- code: 000878
+- code: '000878'
   industry: 有色/铜
   name: 云南铜业
 - code: '600489'
@@ -395,7 +335,7 @@ stocks:
 - code: '600547'
   industry: 有色/黄金
   name: 山东黄金
-- code: 002378
+- code: '002378'
   industry: 有色/钨
   name: 章源钨业
 - code: '000612'
@@ -473,7 +413,7 @@ stocks:
 - code: '002551'
   industry: 医药/医疗工程
   name: 尚荣医疗
-- code: 002219
+- code: '002219'
   industry: 医药/医疗服务
   name: 恒康医疗
 - code: '000403'
@@ -494,9 +434,6 @@ stocks:
 - code: '688111'
   industry: 存储/模组
   name: 江波龙
-- code: '688009'
-  industry: 通信/轨交
-  name: 中国通号
 - code: '600096'
   industry: 化工/磷化工
   name: 云天化
@@ -539,18 +476,6 @@ stocks:
 - code: '601111'
   industry: 航运/航空
   name: 中国国航
-- code: '601319'
-  industry: 保险/财险
-  name: 中国人保
-- code: '601628'
-  industry: 保险/寿险
-  name: 中国人寿
-- code: '601601'
-  industry: 保险/综合
-  name: 中国太保
-- code: '601318'
-  industry: 保险/综合龙头
-  name: 中国平安
 - code: '600030'
   industry: 证券/龙头
   name: 中信证券

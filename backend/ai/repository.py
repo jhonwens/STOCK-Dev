@@ -82,6 +82,17 @@ class SessionRepository:
 class MessageRepository:
     def __init__(self, db_path: str):
         self.db_path = db_path
+        # 幂等迁移：老版本 db 的 agent_message 表可能没有 token_count 列
+        # 缺少该列会导致 INSERT 失败（"table agent_message has no column named token_count"）
+        try:
+            with self._conn() as conn:
+                cols = [r["name"] for r in conn.execute("PRAGMA table_info(agent_message)").fetchall()]
+                if "token_count" not in cols:
+                    conn.execute("ALTER TABLE agent_message ADD COLUMN token_count INTEGER DEFAULT 0")
+                    conn.commit()
+        except Exception:
+            # 表还不存在等情况下静默忽略（首次运行时会由 ensure_table 创建）
+            pass
 
     def _conn(self):
         conn = sqlite3.connect(self.db_path)

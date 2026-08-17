@@ -32,10 +32,10 @@ class FinanceFetcher:
                     return None
                 
                 # 从实时数据中提取
-                pe = float(fields[38]) if fields[38] else 0  # 市盈率
-                pb = float(fields[39]) if fields[39] else 0  # 市净率
-                total_mv = float(fields[36]) if fields[36] else 0  # 总市值(亿元)
-                circ_mv = float(fields[37]) if fields[37] else 0  # 流通市值(亿元)
+                pe = float(fields[39]) if fields[39] else 0  # 市盈率 (index 39)
+                pb = 0  # 腾讯API不直接提供PB
+                total_mv = float(fields[36]) if fields[36] else 0  # 总市值
+                circ_mv = float(fields[37]) if fields[37] else 0  # 流通市值
                 
                 return {
                     'code': stock_code,

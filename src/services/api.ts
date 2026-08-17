@@ -82,6 +82,14 @@ export async function removeStockFromList(code: string): Promise<string> {
   return invoke("remove_stock_from_list", { code });
 }
 
+export async function batchRemoveStocks(codes: string[]): Promise<string> {
+  return invoke("batch_remove_stocks", { codes });
+}
+
+export async function batchAddStocks(stocks: { code: string; name: string; industry: string }[]): Promise<string> {
+  return invoke("batch_add_stocks", { stocks });
+}
+
 export async function getPortfolioStocks(): Promise<PortfolioStock[]> {
   return invoke("get_portfolio_stocks");
 }
@@ -96,6 +104,10 @@ export async function removePortfolioStock(id: number): Promise<string> {
 
 export async function runPortfolioLlm(code: string): Promise<string> {
   return invoke("run_portfolio_llm", { code });
+}
+
+export async function updateStockScoreFromLlm(code: string, suggestion: string, riskLevel: string): Promise<string> {
+  return invoke("update_stock_score_from_llm", { code, suggestion, riskLevel });
 }
 
 export async function savePortfolioAnalysis(code: string, analysisJson: string): Promise<string> {

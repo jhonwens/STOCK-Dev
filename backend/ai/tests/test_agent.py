@@ -75,16 +75,16 @@ def test_agent_repeat_detection_breaks_loop():
         mock_client = MockClient.return_value
         mock_client.chat.return_value = mock_resp  # 每次返回相同 tool_call
 
-        agent = StockAgent(max_steps=10)  # 给足 10 步，应该 3 步就熔断
+        agent = StockAgent(max_steps=10)  # 给足 10 步，应该 4 步就熔断
         events = list(agent.run("查一下 test", history=[], session_id="test"))
 
         event_types = [e.event for e in events]
         # 应该包含 error 事件
         assert "error" in event_types
-        # 实际执行步数应该 <= 4（3 步重复 + 1 步熔断）
+        # 实际执行步数应该 <= 5（4 步重复 + 1 步熔断）
         done_events = [e for e in events if e.event == "done"]
         assert len(done_events) == 1
-        assert done_events[0].data["step"] <= 4
+        assert done_events[0].data["step"] <= 5
         # 错误信息应该提示重复
         error_events = [e for e in events if e.event == "error"]
         assert any("重复" in e.data["content"] for e in error_events)

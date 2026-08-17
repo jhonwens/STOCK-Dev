@@ -19,7 +19,7 @@ def export_message(db_path: str, session_id: str, message_id: int, format: str, 
         return {"error": "Message or session not found"}
 
     if not output_dir:
-        output_dir = os.path.expanduser("~/Documents/衡势价值/智能分析报告")
+        output_dir = os.path.join(os.getcwd(), "exports")
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -29,7 +29,7 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       {!onboardingDone && <Onboarding onComplete={completeOnboarding} />}
       <Routes>
         <Route element={<Layout />}>
@@ -42,6 +42,6 @@ export default function App() {
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

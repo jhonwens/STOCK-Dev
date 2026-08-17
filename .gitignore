@@ -1,6 +1,11 @@
 # 衡势价值 · 项目 .gitignore
 # 防止构建产物和临时文件入库
 
+# --- 敏感配置（含 API KEY，禁止入库） ---
+config/
+src-tauri/config/
+*.secret
+
 # --- Rust / Tauri ---
 src-tauri/target/
 src-tauri/Cargo.lock.bak
@@ -17,6 +22,13 @@ __pycache__/
 *.pyd
 .pytest_cache/
 .mypy_cache/
+
+# PyInstaller 构建中间产物
+build/
+
+# PyInstaller 编译的 backend-runner 二进制
+resources/
+.pyinstaller-data/
 
 # --- IDE / 编辑器 ---
 .vscode/
@@ -38,6 +50,11 @@ __pycache__/
 *.tmp
 *.bak
 *.swp
+
+# --- 本地数据 / 导出产物 ---
+data/
+exports/
+reports/
 
 # --- 用户特定配置 ---
 *.local

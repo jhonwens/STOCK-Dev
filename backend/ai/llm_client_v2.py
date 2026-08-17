@@ -16,9 +16,11 @@ from openai import OpenAI
 
 # 配置路径：__file__ = backend/ai/llm_client_v2.py
 # 需要回退 2 次到项目根 STOCK-Dev/
-_PROJECT_ROOT = Path(__file__).parent.parent.parent
+_PROJECT_ROOT = Path(os.environ.get("STOCK_PROJECT_ROOT", str(Path(__file__).parent.parent.parent)))
+_CONFIG_DIR = Path(os.environ.get("STOCK_CONFIG_DIR", str(_PROJECT_ROOT / "config")))
 DEFAULT_CONFIG_PATHS = [
-    _PROJECT_ROOT / "config" / "llm_config.json",
+    _CONFIG_DIR / "llm_config.json",     # 可写目录优先（打包模式下对应 app data/config）
+    _PROJECT_ROOT / "config" / "llm_config.json",  # 回退到资源包
     _PROJECT_ROOT / "config" / "llm_models.json",
 ]
 
@@ -28,7 +30,7 @@ def _find_config_path() -> Optional[Path]:
     for p in DEFAULT_CONFIG_PATHS:
         if p.exists():
             return p
-    return DEFAULT_CONFIG_PATHS[0]
+    return _CONFIG_DIR / "llm_config.json"
 
 
 class LLMClientV2:
@@ -52,8 +54,15 @@ class LLMClientV2:
                 "请在 config/llm_config.json 中配置至少一个 enabled 模型"
             )
 
+        api_key = self.config.get("api_key")
+        if not api_key:
+            raise ValueError(
+                "Missing API key. "
+                "请检查模型配置中的 API Key"
+            )
+
         self.client = OpenAI(
-            api_key=self.config.get("api_key"),
+            api_key=api_key,
             base_url=self.config.get("api_base"),
         )
         self.model = self.config.get("model", "qwen3.5-35b-a3b")

@@ -26,14 +26,23 @@ class StockAnalyst:
         # 获取脚本目录
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.config_dir = os.path.join(self.base_dir, '..')
-        
+
         # 加载配置
         self.config = self._load_config()
         self.stock_list = self._load_stock_list()
         self.stock_names = {s['code']: s['name'] for s in self.stock_list.get('stocks', [])}
-        
-        # 初始化各模块
-        db_path = self.config.get('database', {}).get('path', '')
+
+        # 数据库路径优先级：
+        # 1. STOCK_DB_PATH 环境变量（打包模式下由 Rust 设置，指向可写应用数据目录）
+        # 2. config.yaml 中的 database.path
+        # 3. 默认 <base_dir>/../data/stock_data.db
+        db_path = (
+            os.environ.get("STOCK_DB_PATH")
+            or self.config.get('database', {}).get('path', '')
+            or os.path.join(self.base_dir, '..', 'data', 'stock_data.db')
+        )
+        # 转为绝对路径
+        db_path = os.path.abspath(db_path)
         self.db = DBManager(db_path)
         self.crawler = StockCrawler()
         self.finance_fetcher = FinanceFetcher()
@@ -61,16 +70,20 @@ class StockAnalyst:
             }
     
     def _load_stock_list(self):
-        """加载股票列表"""
-        list_path = os.path.join(self.config_dir, 'resource', 'stock_list.yaml')
+        """加载股票列表
+        优先级：
+          1. STOCK_LIST_PATH 环境变量（打包模式下由 Rust 设置，指向用户可写目录）
+          2. 默认: resource/stock_list.yaml（开发模式 / bundle 资源）
+        """
+        list_path = os.environ.get("STOCK_LIST_PATH") or os.path.join(self.config_dir, 'resource', 'stock_list.yaml')
         try:
             with open(list_path, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f)
         except Exception as e:
-            print(f"加载股票列表失败: {e}")
+            print(f"加载股票列表失败 ({list_path}): {e}")
             return {'stocks': []}
     
-    def run(self, skip_llm=False):
+    def run(self, skip_llm=False, skip_history=False, quick=False):
         """执行分析"""
         print(f"\n{'='*50}")
         print(f"股票分析助手 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -94,53 +107,64 @@ class StockAnalyst:
         print(f"  完成: {len(realtime_data)} 条")
         
         # Step 2: 爬取资金流向
-        print("\n[2/5] 爬取资金流向...")
-        fund_flow_data = self.crawler.batch_crawl_fund_flow(stock_codes)
-        self.db.insert_fund_flow(fund_flow_data)
-        print(f"  完成: {len(fund_flow_data)} 条")
+        if quick:
+            print("\n[2/6] 爬取资金流向... 已跳过（quick 模式）")
+            fund_flow_data = []
+        else:
+            print("\n[2/6] 爬取资金流向...")
+            fund_flow_data = self.crawler.batch_crawl_fund_flow(stock_codes)
+            self.db.insert_fund_flow(fund_flow_data)
+            print(f"  完成: {len(fund_flow_data)} 条")
         
         # Step 3: 爬取财务指标
-        print("\n[3/5] 爬取财务指标...")
+        print(f"\n[3/6] 爬取财务指标...")
         finance_data = self.finance_fetcher.batch_fetch(stock_codes)
         self.db.insert_finance(finance_data)
         for i, data in enumerate(realtime_data):
             if i < len(finance_data) and finance_data[i].get('code') == data.get('code'):
                 data['pe'] = finance_data[i].get('pe', 0)
-                data['pb'] = finance_data[i].get('pe', 0)
+                data['pb'] = finance_data[i].get('pb', 0)
         self.db.insert_realtime(realtime_data)
         print(f"  完成: {len(finance_data)} 条")
         
         # Step 4: 爬取资讯公告
-        print("\n[4/5] 爬取资讯公告...")
-        news_data = self.news_fetcher.batch_fetch(stock_codes)
-        self.db.insert_news(news_data)
-        print(f"  完成: {len(news_data)} 条")
+        if quick:
+            print("\n[4/6] 爬取资讯公告... 已跳过（quick 模式）")
+            news_data = []
+        else:
+            print("\n[4/6] 爬取资讯公告...")
+            news_data = self.news_fetcher.batch_fetch(stock_codes)
+            self.db.insert_news(news_data)
+            print(f"  完成: {len(news_data)} 条")
         
         # Step 5: 趋势分析 (获取历史K线，最近6个月约130天)
-        print("\n[5/6] 获取历史K线...")
-        import baostock as bs
-        from datetime import timedelta
-        start_date = (datetime.now() - timedelta(days=200)).strftime('%Y-%m-%d')
-        lg = bs.login()
-        for code in stock_codes:  # 获取所有股票历史数据
-            bs_code = f"sh.{code}" if code.startswith('6') else f"sz.{code}"
-            rs = bs.query_history_k_data_plus(bs_code, 'date,code,open,high,low,close,volume',
-                start_date=start_date, end_date=datetime.now().strftime('%Y-%m-%d'),
-                frequency='d', adjustflag='2')
-            while rs.error_code == '0' and rs.next():
-                row = rs.get_row_data()
-                if row[0]:
-                    self.db.insert_history([{
-                        'code': code,
-                        'trade_date': row[0],
-                        'open': float(row[2]) if row[2] else 0,
-                        'high': float(row[3]) if row[3] else 0,
-                        'low': float(row[4]) if row[4] else 0,
-                        'close': float(row[5]) if row[5] else 0,
-                        'volume': float(row[6]) if row[6] else 0,
-                    }])
-        bs.logout()
-        print(f"  完成")
+        if skip_history:
+            print("\n[5/6] 获取历史K线... 已跳过（quick 模式）")
+        else:
+            print("\n[5/6] 获取历史K线...")
+            import baostock as bs
+            from datetime import timedelta
+            start_date = (datetime.now() - timedelta(days=200)).strftime('%Y-%m-%d')
+            lg = bs.login()
+            for code in stock_codes:  # 获取所有股票历史数据
+                bs_code = f"sh.{code}" if code.startswith('6') else f"sz.{code}"
+                rs = bs.query_history_k_data_plus(bs_code, 'date,code,open,high,low,close,volume',
+                    start_date=start_date, end_date=datetime.now().strftime('%Y-%m-%d'),
+                    frequency='d', adjustflag='2')
+                while rs.error_code == '0' and rs.next():
+                    row = rs.get_row_data()
+                    if row[0]:
+                        self.db.insert_history([{
+                            'code': code,
+                            'trade_date': row[0],
+                            'open': float(row[2]) if row[2] else 0,
+                            'high': float(row[3]) if row[3] else 0,
+                            'low': float(row[4]) if row[4] else 0,
+                            'close': float(row[5]) if row[5] else 0,
+                            'volume': float(row[6]) if row[6] else 0,
+                        }])
+            bs.logout()
+            print(f"  完成")
 
         # Step 5b: 技术指标计算
         print("\n[5b/6] 技术指标计算...")
@@ -160,7 +184,7 @@ class StockAnalyst:
         # Step 6: 涨停扫描
         print("\n[6/6] 涨停扫描...")
         from limit_up_finder import LimitUpFinder
-        limit_up_finder = LimitUpFinder(self.config.get('database', {}).get('path', ''))
+        limit_up_finder = LimitUpFinder(self.db.db_path)
         limit_up_finder.scan_all_stocks(days=20)
         print(f"  完成")
         trend_data = self.trend_analyzer.batch_analyze(stock_codes)
@@ -276,17 +300,120 @@ class StockAnalyst:
         
         return result
 
+    def _fix_industries(self):
+        """将 stock_list.yaml 中行业为「其他」的股票，通过 baostock 查询真实行业并更新"""
+        import os, yaml
+        list_path = os.path.join(self.config_dir, 'resource', 'stock_list.yaml')
+        if not os.path.exists(list_path):
+            return
+        with open(list_path, 'r', encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        stocks = data.get('stocks', [])
+        to_fix = [s for s in stocks if not s.get('industry') or s.get('industry') in ('其他', '其他/其他', '')]
+        if not to_fix:
+            return
+        import baostock as bs
+        bs.login()
+        changed = 0
+        for s in to_fix:
+            code = s['code']
+            bs_code = f"sh.{code}" if code.startswith('6') else f"sz.{code}"
+            try:
+                rs = bs.query_stock_industry(bs_code)
+                while rs.next():
+                    row = rs.get_row_data()
+                    official = row[3]
+                    # 关键词 → 简化行业映射
+                    kw_map = [
+                        # 新能源/电气
+                        ('电气机械', 'AI/新能源'), ('汽车', '新能源车'), ('锂', '新能源车'),
+                        ('电池', '新能源车'), ('光伏', '光伏'), ('电力', '光伏'),
+                        ('电气设备', 'AI/新能源'),
+                        # 消费
+                        ('酒', '消费/白酒'), ('食品', '消费'), ('饮料', '消费'),
+                        ('调味品', '消费'), ('化妆品', '消费'), ('农副食品', '消费'),
+                        ('烟草', '消费'), ('纺织', '消费'), ('服装', '消费/服装'),
+                        ('皮革', '消费'), ('木材', '消费'), ('家具', '消费'),
+                        ('造纸', '消费'), ('印刷', '消费'), ('文教', '消费'),
+                        ('文体', '消费'), ('娱乐', '消费'), ('餐饮', '消费'),
+                        ('零售', '消费'), ('住宿', '消费'),
+                        # 金融
+                        ('货币金融', '银行'), ('银行', '银行'), ('保险', '保险'),
+                        ('证券', '证券'), ('资本市场', '证券'), ('金融', '银行'),
+                        # 房地产
+                        ('房地产', '房地产'),
+                        # 医药
+                        ('医药', '医药'), ('医疗', '医药'), ('制药', '医药'),
+                        ('生物', '医药/生物制药'), ('卫生', '医药'),
+                        # AI/软件
+                        ('计算机', 'AI/软件'), ('软件', 'AI/软件'), ('信息技术', 'AI/软件'),
+                        ('互联网', 'AI/软件'), ('云计算', 'AI/软件'),
+                        ('大数据', 'AI/软件'), ('人工智能', 'AI/软件'),
+                        # 芯片/电子
+                        ('电子', '芯片'), ('半导体', '芯片'), ('集成电路', '芯片'),
+                        ('通信', '芯片/通信'), ('电子设备', '芯片'),
+                        ('仪器仪表', '芯片'), ('元器件', '芯片'),
+                        # 化工
+                        ('化工', '化工'), ('化学', '化工'), ('石化', '化工'),
+                        ('石油', '化工'), ('橡胶', '化工'), ('塑料', '化工'),
+                        ('化纤', '化工'), ('涂料', '化工'),
+                        # 有色/金属
+                        ('有色', '有色'), ('金属', '有色'), ('钢铁', '制造'),
+                        ('非金属矿物', '制造/建材'), ('有色金属', '有色'),
+                        # 制造
+                        ('家电', '制造/家电'), ('机械', '制造'), ('设备', '制造'),
+                        ('通用设备', '制造'), ('专用设备', '制造'),
+                        ('运输设备', '制造'), ('仪器仪表制造', '制造'),
+                        # 军工
+                        ('军工', '军工'), ('航空', '军工'), ('航天', '军工'),
+                        ('船舶', '军工'), ('兵器', '军工'),
+                        # 基建/建材
+                        ('建材', '制造/建材'), ('建筑', '基建'), ('基建', '基建'),
+                        ('土木工程', '基建'), ('装饰', '基建'),
+                        # 交通/航运
+                        ('交通运输', '航运'), ('铁路', '基建'), ('公路', '基建'),
+                        ('水上运输', '航运'), ('航空运输', '航运'), ('物流', '航运'),
+                        # 农牧
+                        ('农业', '制造/农牧'), ('牧', '制造/农牧'), ('渔业', '消费'),
+                        ('林业', '制造/农牧'),
+                        # PCB
+                        ('印刷电路', 'PCB'), ('PCB', 'PCB'),
+                        # 环保/新能源
+                        ('环保', '新能源'), ('公共设施', '光伏/电力'),
+                        ('生态', '新能源'), ('环境', '新能源'),
+                        # 综合
+                        ('综合', '其他'), ('多元', '其他'),
+                    ]
+                    matched = '其他'
+                    for kw, cat in kw_map:
+                        if kw in official:
+                            matched = cat
+                            break
+                    s['industry'] = matched
+                    changed += 1
+                    break
+            except:
+                pass
+        bs.logout()
+        if changed:
+            with open(list_path, 'w', encoding='utf-8') as f:
+                yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            print(f"[_fix_industries] 已修正 {changed} 只股票的行业分类")
+        else:
+            print("[_fix_industries] 无需修改")
+
     def run_pipeline(self, mode="quick"):
         """Run analysis pipeline for Tauri sidecar integration"""
         import json
         try:
             if mode == "quick":
-                self.run(skip_llm=True)
+                self.run(skip_llm=True, skip_history=True, quick=True)
             else:
                 self.run()
             from scoring_engine import run_scoring
             stock_codes = [s.get('code') for s in self.stock_list.get('stocks', [])]
-            run_scoring(self.config['database']['path'], stock_codes)
+            run_scoring(self.db.db_path, stock_codes)
+            self._fix_industries()
             self.db.cleanup_old_data(years=3)
             return {"status": "success", "message": f"Pipeline {mode} completed"}
         except Exception as e:

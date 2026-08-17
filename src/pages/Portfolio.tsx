@@ -2,7 +2,7 @@ import { useState, useEffect, Fragment } from "react";
 import {
   getPortfolioStocks, addPortfolioStock, removePortfolioStock,
   runPortfolioLlm, savePortfolioAnalysis, loadPortfolioAnalysis,
-  exportPortfolioMd,
+  exportPortfolioMd, updateStockScoreFromLlm,
 } from "../services/api";
 import { getFeatureFlags } from "../services/feature_flag";
 import UpgradeModal from "../components/UpgradeModal";
@@ -28,11 +28,24 @@ interface RawData {
   [k: string]: any;
 }
 
+interface TimeHorizonAnalysis {
+  action?: string;
+  holding_period?: string;
+  percent?: number;
+  entry_condition?: string;
+  price_target?: [number, number];
+  stop_loss?: number;
+  pullback_level?: string;
+  key_risk?: string;
+  catalyst?: string;
+  reason?: string;
+}
+
 interface LlmAnalysis {
-  overall_action?: "加仓" | "减仓" | "持有";
-  short_term?: { action: string; percent: number; reason: string };
-  mid_term?: { action: string; percent: number; reason: string };
-  long_term?: { action: string; percent: number; reason: string };
+  overall_action?: "加仓" | "减仓" | "持有" | "观望";
+  short_term?: TimeHorizonAnalysis;
+  mid_term?: TimeHorizonAnalysis;
+  long_term?: TimeHorizonAnalysis;
   support?: number;
   resistance?: number;
   stop_loss?: number;
@@ -169,10 +182,15 @@ export default function Portfolio() {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`确定移除 ${name}？`)) return;
-    await removePortfolioStock(id);
-    if (selected?.id === id) { setSelected(null); setLlmData(null); }
-    load();
+    console.log(`[Portfolio.handleDelete] 尝试删除: id=${id} ${name}`);
+    try {
+      await removePortfolioStock(id);
+      if (selected?.id === id) { setSelected(null); setLlmData(null); }
+      load();
+    } catch (e) {
+      console.error(`[Portfolio.handleDelete] 删除失败:`, e);
+      alert(`删除失败: ${e}`);
+    }
   };
 
   const handleSelect = async (s: PortfolioStock) => {
@@ -209,11 +227,23 @@ export default function Portfolio() {
     try {
       const res = await runPortfolioLlm(s.code);
       try {
-        setLlmData(JSON.parse(res));
+        const data = JSON.parse(res);
+        setLlmData(data);
         setCacheTime("");
         savePortfolioAnalysis(s.code, res).catch(() => {});
+        // 同步 LLM 分析结果到 stock_score 表，保持一致
+        const suggestion = data.overall_action || "持有";
+        // 从 short_term 中推断风险等级：如果所有周期都有明显的风险描述则取高值
+        const hasHighRisk = data.long_term?.key_risk || data.mid_term?.key_risk || data.short_term?.key_risk;
+        const riskLevel = suggestion === "减仓" ? "高" : hasHighRisk ? "中" : "低";
+        updateStockScoreFromLlm(s.code, suggestion, riskLevel).then(() => {
+          // 刷新持仓列表更新评分/建议/风险栏位
+          getPortfolioStocks().then(setStocks).catch(() => {});
+        }).catch(() => {});
       } catch (e) {
-        setLlmError(`❌ LLM 返回格式异常: ${String(e).replace("SyntaxError: JSON Parse error: ", "").slice(0, 50)}`);
+        // 详细展示实际收到的内容（限 800 字符），方便排查 LLM 截断/格式问题
+        const preview = res.length > 800 ? res.slice(0, 800) + `\n... [共 ${res.length} 字符，已截断]` : res;
+        setLlmError(`❌ LLM 返回格式异常: ${String(e).replace("SyntaxError: JSON Parse error: ", "").slice(0, 60)}\n\n收到的内容（前800字符）:\n${preview}`);
       }
     } catch (e) {
       setLlmError(`❌ 分析失败: ${e}`);
@@ -374,7 +404,7 @@ export default function Portfolio() {
 
                         {/* Error */}
                         {llmError && (
-                          <div style={{ textAlign: "center", padding: "20px 0", fontSize: 12, color: "var(--down)" }}>
+                          <div style={{ textAlign: "left", padding: "20px 0", fontSize: 12, color: "var(--down)", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
                             {llmError}
                           </div>
                         )}
@@ -466,47 +496,56 @@ export default function Portfolio() {
                               <div style={{ marginTop: 12 }}>
                                 <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>🎯 操作建议</div>
                                 {[
-                                  { key: "short_term", label: "短期", icon: "🟢", color: "#16a34a" },
-                                  { key: "mid_term", label: "中期", icon: "🟡", color: "#ca8a04" },
-                                  { key: "long_term", label: "长期", icon: "🔵", color: "#2563eb" },
+                                  { key: "short_term", label: "短期 (1-4周)", icon: "🟢", color: "#16a34a" },
+                                  { key: "mid_term", label: "中期 (1-3月)", icon: "🟡", color: "#ca8a04" },
+                                  { key: "long_term", label: "长期 (6月+)", icon: "🔵", color: "#2563eb" },
                                 ].map(({ key, label, icon, color }) => {
-                                  const item = llmData[key] as { action?: string; percent?: number; reason?: string } | undefined;
+                                  const item = llmData[key] as TimeHorizonAnalysis | undefined;
                                   if (!item) return null;
                                   const isAdd = item.action === "加仓";
                                   const isSell = item.action === "减仓";
+                                  const fields: [string, string | undefined][] = [
+                                    ["建议持有周期", item.holding_period],
+                                    ["操作比例", item.percent ? `${item.percent}%` : undefined],
+                                    ["进场条件", item.entry_condition],
+                                    ["目标价区间", item.price_target ? `${item.price_target[0]} - ${item.price_target[1]}` : undefined],
+                                    ["止损位", item.stop_loss !== undefined ? `${Number(item.stop_loss).toFixed(1)}` : undefined],
+                                    ["回调预期", item.pullback_level],
+                                    ["核心风险", item.key_risk],
+                                    ["催化因素", item.catalyst],
+                                  ].filter(([, v]) => v !== undefined && v !== "") as [string, string][];
                                   return (
                                     <div key={key} style={{
-                                      display: "flex", alignItems: "center", gap: 12,
-                                      padding: "10px 14px", marginBottom: 8,
+                                      padding: "12px 14px", marginBottom: 10,
                                       background: isAdd ? "#f0fdf4" : isSell ? "#fef2f2" : "#f8f9fa",
                                       borderLeft: `4px solid ${color}`,
                                       borderRadius: 8,
                                     }}>
-                                      <span style={{ fontSize: 18 }}>{icon}</span>
-                                      <div style={{ flex: 1 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                          <span style={{ fontSize: 13, fontWeight: 600, color }}>{label}</span>
-                                          <span style={{
-                                            fontSize: 13, fontWeight: 700,
-                                            color: isAdd ? "#16a34a" : isSell ? "#dc2626" : "#888",
-                                          }}>
-                                            {item.action}
-                                          </span>
-                                          {item.percent ? (
-                                            <span style={{
-                                              fontSize: 15, fontWeight: 700,
-                                              color: isAdd ? "#16a34a" : isSell ? "#dc2626" : "#888",
-                                            }}>
-                                              {item.percent}%
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                        {item.reason && (
-                                          <div style={{ fontSize: 12, color: "#666", marginTop: 2, lineHeight: 1.5 }}>
-                                            {item.reason}
-                                          </div>
-                                        )}
+                                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                        <span style={{ fontSize: 16 }}>{icon}</span>
+                                        <span style={{ fontSize: 13, fontWeight: 600, color }}>{label}</span>
+                                        <span style={{
+                                          fontSize: 14, fontWeight: 700,
+                                          color: isAdd ? "#16a34a" : isSell ? "#dc2626" : "#888",
+                                        }}>
+                                          {item.action}
+                                        </span>
                                       </div>
+                                      {fields.length > 0 && (
+                                        <div style={{ fontSize: 12, color: "#555", lineHeight: 1.7, marginTop: 4 }}>
+                                          {fields.map(([label, value]) => (
+                                            <div key={label} style={{ display: "flex", gap: 6 }}>
+                                              <span style={{ color: "#888", whiteSpace: "nowrap", minWidth: 70 }}>{label}:</span>
+                                              <span style={{ color: "#333", flex: 1 }}>{value}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {item.reason && (
+                                        <div style={{ fontSize: 12, color: "#666", marginTop: 4, fontStyle: "italic", borderTop: "1px dashed #ddd", paddingTop: 4 }}>
+                                          💬 {item.reason}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
@@ -522,19 +561,30 @@ export default function Portfolio() {
                               }}>
                                 {llmData.support ? (
                                   <span style={{ color: "#16a34a", fontWeight: 600 }}>
-                                    📉 支撑: {llmData.support.toFixed(0)}
+                                    📉 支撑: {Number(llmData.support).toFixed(0)}
                                   </span>
                                 ) : null}
                                 {llmData.resistance ? (
                                   <span style={{ color: "#dc2626", fontWeight: 600 }}>
-                                    📈 阻力: {llmData.resistance.toFixed(0)}
+                                    📈 阻力: {Number(llmData.resistance).toFixed(0)}
                                   </span>
                                 ) : null}
                                 {llmData.stop_loss ? (
                                   <span style={{ color: "#888", fontWeight: 600 }}>
-                                    🛑 止损: {llmData.stop_loss.toFixed(0)}
+                                    🛑 止损: {Number(llmData.stop_loss).toFixed(0)}
                                   </span>
                                 ) : null}
+                              </div>
+                            )}
+
+                            {llmData.raw_analysis && !llmData.overall_action && (
+                              <div style={{
+                                marginTop: 10, padding: "12px 16px", background: "#f8f9fa",
+                                borderRadius: 8, border: "1px solid #e0e0e0", fontSize: 13, lineHeight: 1.6,
+                                whiteSpace: "pre-wrap",
+                              }}>
+                                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>📄 原始分析</div>
+                                {llmData.raw_analysis}
                               </div>
                             )}
                           </>

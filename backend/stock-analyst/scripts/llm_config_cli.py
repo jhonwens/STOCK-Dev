@@ -17,7 +17,7 @@ import urllib.error
 
 # 切到项目根目录
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", ".."))
+PROJECT_ROOT = os.environ.get("STOCK_PROJECT_ROOT") or os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", ".."))
 os.chdir(PROJECT_ROOT)
 sys.path.insert(0, SCRIPT_DIR)
 
@@ -55,7 +55,10 @@ def cmd_set_active(model_id: str):
 
 
 def cmd_test(api_base: str, api_key: str, model: str):
-    """测试 LLM 连接（不入库配置）"""
+    """测试 LLM 连接。
+    成功且当前无激活模型时 → 自动把测试参数保存为激活模型。
+    这样用户点一次"测试连接"就完成配置，避免"测试通过但 AI 分析用不了"的困惑。
+    """
     try:
         req = urllib.request.Request(
             f"{api_base.rstrip('/')}/chat/completions",
@@ -71,7 +74,22 @@ def cmd_test(api_base: str, api_key: str, model: str):
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status == 200:
-                print("✅ 连接成功")
+                # 自动保存：仅在当前无激活模型时
+                c = LLMClient()
+                if not c.config:
+                    payload = {
+                        "name": model,
+                        "provider": "custom",
+                        "api_base": api_base,
+                        "api_key": api_key,
+                        "model": model,
+                        "temperature": 0.7,
+                        "enabled": True,
+                    }
+                    save_msg = c.save_model(json.dumps(payload, ensure_ascii=False))
+                    print(f"✅ 连接成功（{save_msg}）")
+                else:
+                    print("✅ 连接成功（已存在激活模型，未自动保存）")
             else:
                 body = resp.read().decode("utf-8", errors="replace")
                 print(f"❌ HTTP {resp.status}: {body[:120]}")
