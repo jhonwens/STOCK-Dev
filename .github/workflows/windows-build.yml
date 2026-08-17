@@ -59,12 +59,8 @@ jobs:
           workspaces: src-tauri
 
       - name: Build Tauri (Windows NSIS/MSI)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: src-tauri
-          args: --verbose
+        shell: pwsh
+        run: npx tauri build --verbose
 
       # ---------- 核验打包产物不包含 API KEY ----------
       - name: Verify bundle excludes API keys
