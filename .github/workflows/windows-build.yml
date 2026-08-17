@@ -60,7 +60,20 @@ jobs:
 
       - name: Build Tauri (Windows NSIS/MSI)
         shell: pwsh
-        run: npx tauri build --verbose
+        run: |
+          $ErrorActionPreference = "Continue"
+          & npx tauri build --verbose 2>&1 | Tee-Object -FilePath tauri-build.log
+          $code = $LASTEXITCODE
+          Get-Content tauri-build.log | Select-Object -Last 5
+          if ($code -ne 0) { Write-Error "tauri build failed (exit $code)"; exit $code }
+
+      - name: Upload tauri build log (even on failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-build-log
+          path: tauri-build.log
+          if-no-files-found: warn
 
       # ---------- 核验打包产物不包含 API KEY ----------
       - name: Verify bundle excludes API keys
