@@ -1,5 +1,10 @@
 {
   "bundle": {
+    "windows": {
+      "wix": {
+        "language": ["zh-CN"]
+      }
+    },
     "resources": {
       "../resources/backend-runner.exe": "backend-runner.exe"
     }
