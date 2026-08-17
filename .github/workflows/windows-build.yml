@@ -65,7 +65,14 @@ jobs:
           & npx tauri build --verbose 2>&1 | Tee-Object -FilePath tauri-build.log
           $code = $LASTEXITCODE
           Get-Content tauri-build.log | Select-Object -Last 5
-          if ($code -ne 0) { Write-Error "tauri build failed (exit $code)"; exit $code }
+          if ($code -ne 0) {
+            Write-Error "tauri build failed (exit $code)"
+            $tail = Get-Content tauri-build.log -ErrorAction SilentlyContinue | Select-Object -Last 60
+            $msg = ("tauri build failed (exit {0})`n" -f $code) + ($tail -join "`n")
+            $esc = $msg.Replace('%', '%25').Replace('`r', '').Replace('`n', '%0A')
+            Write-Output "::error file=windows-build.yml::$esc"
+            exit $code
+          }
 
       - name: Upload tauri build log (even on failure)
         if: always()
