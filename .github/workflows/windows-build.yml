@@ -73,7 +73,7 @@ jobs:
             Write-Error "tauri build failed (exit $code)"
             $tail = Get-Content tauri-build.log -ErrorAction SilentlyContinue | Select-Object -Last 60
             $msg = ("tauri build failed (exit {0})`n" -f $code) + ($tail -join "`n")
-            $esc = $msg.Replace('%', '%25').Replace('`r', '').Replace('`n', '%0A')
+            $esc = $msg.Replace('%', '%25').Replace("`r", '').Replace("`n", '%0A')
             Write-Output "::error file=windows-build.yml::$esc"
             exit $code
           }
@@ -101,7 +101,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B ci-debug-logs 2>&1 | Out-String | Write-Host
           Copy-Item tauri-build.log ci-tauri-build.log -Force
-          git add ci-tauri-build.log
+          git add -f ci-tauri-build.log
           git commit -m "debug: publish tauri build log (run ${{ github.run_id }})" 2>&1 | Out-String | Write-Host
           git push --force origin ci-debug-logs 2>&1 | Out-String | Write-Host
 
