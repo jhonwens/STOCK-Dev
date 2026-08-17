@@ -9,6 +9,9 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
+    permissions:
+      contents: write
+
     env:
       PYTHON_VERSION: "3.12"
 
@@ -59,6 +62,7 @@ jobs:
           workspaces: src-tauri
 
       - name: Build Tauri (Windows NSIS/MSI)
+        id: build-tauri
         shell: pwsh
         run: |
           $ErrorActionPreference = "Continue"
@@ -81,6 +85,25 @@ jobs:
           name: tauri-build-log
           path: tauri-build.log
           if-no-files-found: warn
+
+      # Publish the raw build log to a debug branch so it can be read
+      # anonymously via raw.githubusercontent.com (log download needs auth).
+      - name: Publish tauri build log to debug branch
+        if: always() && steps.build-tauri.outcome == 'failure'
+        id: debug-log
+        shell: pwsh
+        run: |
+          if (-not (Test-Path tauri-build.log)) {
+            Write-Host "no tauri-build.log, skipping branch publish"
+            exit 0
+          }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B ci-debug-logs 2>&1 | Out-String | Write-Host
+          Copy-Item tauri-build.log ci-tauri-build.log -Force
+          git add ci-tauri-build.log
+          git commit -m "debug: publish tauri build log (run ${{ github.run_id }})" 2>&1 | Out-String | Write-Host
+          git push --force origin ci-debug-logs 2>&1 | Out-String | Write-Host
 
       # ---------- 核验打包产物不包含 API KEY ----------
       - name: Verify bundle excludes API keys
