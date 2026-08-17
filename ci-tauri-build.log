@@ -1,0 +1,750 @@
+       Debug [tauri_cli::helpers::app_paths] Found Tauri project inside D:\a\STOCK-Dev\STOCK-Dev\src-tauri on early lookup
+        Info [tauri_cli::build] Looking up installed tauri packages to check mismatched versions...
+        Warn [tauri_cli::build] The bundle identifier "com.hengshi-value.app" set in `"tauri.conf.json" identifier` ends with `.app`. This is not recommended because it conflicts with the application bundle extension on macOS.
+     Running [tauri_cli::helpers] beforeBuildCommand `npm run build`
+       Debug [tauri_cli::helpers] Setting environment for hook {"TAURI_ENV_ARCH": "x86_64", "TAURI_ENV_PLATFORM": "windows", "TAURI_ENV_TARGET_TRIPLE": "x86_64-pc-windows-msvc", "TAURI_ENV_PLATFORM_VERSION": "10.0.26100", "TAURI_ENV_FAMILY": "windows"}
+     Running [tauri_cli] Command `cmd /S /C npm run build`
+
+> hengshi-value@0.1.0 build
+> tsc && vite build
+
+[36mvite v8.0.14 [32mbuilding client environment for production...[36m[39m
+[2K
+transforming...✓ 51 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                      0.66 kB │ gzip:  0.44 kB
+dist/assets/logo-256-8Wno8kLV.png   15.99 kB
+dist/assets/index-BYnGibSn.css       1.57 kB │ gzip:  0.74 kB
+dist/assets/index-dHwlbPly.js      324.11 kB │ gzip: 97.65 kB
+
+[32m✓ built in 296ms[39m
+     Running [tauri_cli] Command `cargo build --bins --features tauri/custom-protocol --release`
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded dirs-sys v0.4.1
+  Downloaded dpi v0.1.2
+  Downloaded dtor v0.3.0
+  Downloaded dyn-clone v1.0.20
+  Downloaded embed-resource v3.0.9
+  Downloaded adler2 v2.0.1
+  Downloaded dirs v5.0.1
+  Downloaded dirs v6.0.0
+  Downloaded dirs-sys v0.5.0
+  Downloaded dtoa-short v0.3.5
+  Downloaded dunce v1.0.5
+  Downloaded equivalent v1.0.2
+  Downloaded foldhash v0.2.0
+  Downloaded form_urlencoded v1.2.2
+  Downloaded hashlink v0.9.1
+  Downloaded jetscii v0.5.3
+  Downloaded once_cell_polyfill v1.70.2
+  Downloaded pin-project-lite v0.2.17
+  Downloaded utf8parse v0.2.2
+  Downloaded version_check v0.9.5
+  Downloaded windows-future v0.2.1
+  Downloaded windows-interface v0.59.3
+  Downloaded writeable v0.6.3
+  Downloaded anstyle-query v1.1.5
+  Downloaded digest v0.10.7
+  Downloaded dom_query v0.27.0
+  Downloaded dtoa v1.0.11
+  Downloaded dtor-proc-macro v0.0.6
+  Downloaded emojis v0.8.2
+  Downloaded entities v1.0.1
+  Downloaded erased-serde v0.4.10
+  Downloaded fallible-streaming-iterator v0.1.9
+  Downloaded fancy-regex v0.16.2
+  Downloaded fastrand v2.4.1
+  Downloaded fdeflate v0.3.7
+  Downloaded find-msvc-tools v0.1.9
+  Downloaded finl_unicode v1.4.0
+  Downloaded fmt2io v1.0.0
+  Downloaded fnv v1.0.7
+  Downloaded hashbrown v0.14.5
+  Downloaded hashbrown v0.17.1
+  Downloaded icu_properties_data v2.2.0
+  Downloaded indexmap v1.9.3
+  Downloaded option-ext v0.2.0
+  Downloaded powerfmt v0.2.0
+  Downloaded utf8_iter v1.0.4
+  Downloaded uuid v1.23.1
+  Downloaded walkdir v2.5.0
+  Downloaded windows-implement v0.60.2
+  Downloaded windows-link v0.2.1
+  Downloaded displaydoc v0.2.5
+  Downloaded encoding_rs v0.8.35
+  Downloaded fallible-iterator v0.3.0
+  Downloaded generic-array v0.14.7
+  Downloaded getrandom v0.3.4
+  Downloaded getrandom v0.4.2
+  Downloaded glob v0.3.3
+  Downloaded hashbrown v0.12.3
+  Downloaded hex v0.4.3
+  Downloaded ident_case v1.0.1
+  Downloaded idna v1.1.0
+  Downloaded idna_adapter v1.2.2
+  Downloaded infer v0.19.0
+  Downloaded is_terminal_polyfill v1.70.2
+  Downloaded itoa v1.0.18
+  Downloaded keyboard-types v0.7.0
+  Downloaded linked-hash-map v0.5.6
+  Downloaded litemap v0.8.2
+  Downloaded lock_api v0.4.14
+  Downloaded log v0.4.29
+  Downloaded mime v0.3.17
+  Downloaded new_debug_unreachable v1.0.6
+  Downloaded once_cell v1.21.4
+  Downloaded os_pipe v1.2.3
+  Downloaded percent-encoding v2.3.2
+  Downloaded phf_generator v0.13.1
+  Downloaded phf_macros v0.13.1
+  Downloaded potential_utf v0.1.5
+  Downloaded vcpkg v0.2.15
+  Downloaded vswhom v0.1.0
+  Downloaded vswhom-sys v0.1.3
+  Downloaded webview2-com v0.38.2
+  Downloaded winapi-util v0.1.11
+  Downloaded windows-collections v0.2.0
+  Downloaded windows-core v0.61.2
+  Downloaded windows-link v0.1.3
+  Downloaded windows_x86_64_msvc v0.53.1
+  Downloaded winnow v1.0.3
+  Downloaded wry v0.55.1
+  Downloaded yaml-rust v0.4.5
+  Downloaded yoke-derive v0.8.2
+  Downloaded bs58 v0.5.1
+  Downloaded cargo_metadata v0.19.2
+  Downloaded colorchoice v1.0.5
+  Downloaded cookie v0.18.1
+  Downloaded flate2 v1.1.9
+  Downloaded heck v0.5.0
+  Downloaded icu_properties v2.2.0
+  Downloaded json-patch v3.0.1
+  Downloaded markup5ever v0.38.0
+  Downloaded miniz_oxide v0.8.9
+  Downloaded num-conv v0.2.2
+  Downloaded onig v6.5.3
+  Downloaded open v5.3.5
+  Downloaded phf v0.13.1
+  Downloaded phf_codegen v0.13.1
+  Downloaded phf_shared v0.13.1
+  Downloaded pkg-config v0.3.33
+  Downloaded precomputed-hash v0.1.1
+  Downloaded rustc_version v0.4.1
+  Downloaded same-file v1.0.6
+  Downloaded webview2-com-macros v0.8.1
+  Downloaded windows-numerics v0.2.0
+  Downloaded windows-result v0.3.4
+  Downloaded windows-version v0.1.7
+  Downloaded winnow v0.7.15
+  Downloaded winreg v0.55.0
+  Downloaded zerocopy v0.8.48
+  Downloaded zerofrom v0.1.8
+  Downloaded zerovec-derive v0.11.3
+  Downloaded ahash v0.8.12
+  Downloaded alloc-stdlib v0.2.2
+  Downloaded anstyle v1.0.14
+  Downloaded anstyle-parse v1.0.0
+  Downloaded autocfg v1.5.1
+  Downloaded base64 v0.22.1
+  Downloaded bincode v1.3.3
+  Downloaded bit-set v0.8.0
+  Downloaded bitflags v1.3.2
+  Downloaded block-buffer v0.10.4
+  Downloaded bon-macros v3.9.3
+  Downloaded cargo_toml v0.22.3
+  Downloaded caseless v0.2.2
+  Downloaded cc v1.2.62
+  Downloaded cfb v0.7.3
+  Downloaded clap_derive v4.6.1
+  Downloaded comrak v0.52.0
+  Downloaded crypto-common v0.1.7
+  Downloaded cssparser v0.36.0
+  Downloaded cssparser-macros v0.6.1
+  Downloaded http v1.4.0
+  Downloaded icu_provider v2.2.0
+  Downloaded jsonptr v0.6.3
+  Downloaded num-traits v0.2.19
+  Downloaded parking_lot v0.12.5
+  Downloaded parking_lot_core v0.9.12
+  Downloaded quote v1.0.45
+  Downloaded raw-window-handle v0.6.2
+  Downloaded ref-cast v1.0.25
+  Downloaded ref-cast-impl v1.0.25
+  Downloaded rustc-hash v2.1.2
+  Downloaded stable_deref_trait v1.2.1
+  Downloaded string_cache v0.9.0
+  Downloaded string_cache_codegen v0.6.1
+  Downloaded strsim v0.11.1
+  Downloaded synstructure v0.13.2
+  Downloaded tauri-macros v2.6.2
+  Downloaded tauri-plugin v2.6.2
+  Downloaded tauri-runtime v2.11.2
+  Downloaded tauri-winres v0.3.6
+  Downloaded terminal_size v0.4.4
+  Downloaded web_atoms v0.2.4
+  Downloaded windows-strings v0.4.2
+  Downloaded windows-targets v0.48.5
+  Downloaded windows-targets v0.52.6
+  Downloaded windows-targets v0.53.5
+  Downloaded windows-threading v0.1.0
+  Downloaded yoke v0.8.2
+  Downloaded zerofrom-derive v0.1.7
+  Downloaded zerotrie v0.2.4
+  Downloaded zmij v1.0.21
+  Downloaded alloc-no-stdlib v2.0.4
+  Downloaded anstyle-wincon v3.0.11
+  Downloaded anyhow v1.0.102
+  Downloaded bit-vec v0.8.0
+  Downloaded byteorder v1.5.0
+  Downloaded bytes v1.11.1
+  Downloaded camino v1.2.2
+  Downloaded cargo-platform v0.1.9
+  Downloaded cfg-if v1.0.4
+  Downloaded clap v4.6.1
+  Downloaded clap_lex v1.1.0
+  Downloaded cpufeatures v0.2.17
+  Downloaded crossbeam-channel v0.5.15
+  Downloaded ctor v0.8.0
+  Downloaded darling_macro v0.23.0
+  Downloaded html5ever v0.38.0
+  Downloaded ico v0.5.0
+  Downloaded icu_locale_core v2.2.0
+  Downloaded icu_normalizer v2.2.0
+  Downloaded icu_normalizer_data v2.2.0
+  Downloaded indexmap v2.14.0
+  Downloaded memchr v2.8.0
+  Downloaded mio v1.2.0
+  Downloaded plist v1.9.0
+  Downloaded prettyplease v0.2.37
+  Downloaded proc-macro2 v1.0.106
+  Downloaded rustversion v1.0.22
+  Downloaded ryu v1.0.23
+  Downloaded scopeguard v1.2.0
+  Downloaded serde_repr v0.1.20
+  Downloaded serde_spanned v1.1.1
+  Downloaded shell-words v1.1.1
+  Downloaded time-core v0.1.8
+  Downloaded anstream v1.0.0
+  Downloaded bon v3.9.3
+  Downloaded crc32fast v1.5.0
+  Downloaded crossbeam-utils v0.8.21
+  Downloaded ctor-proc-macro v0.0.7
+  Downloaded darling v0.23.0
+  Downloaded thiserror v1.0.69
+  Downloaded thiserror v2.0.18
+  Downloaded thiserror-impl v1.0.69
+  Downloaded thiserror-impl v2.0.18
+  Downloaded time-macros v0.2.27
+  Downloaded bitflags v2.11.1
+  Downloaded darling_core v0.23.0
+  Downloaded serialize-to-javascript v0.1.2
+  Downloaded serialize-to-javascript-impl v0.1.2
+  Downloaded shared_child v1.1.1
+  Downloaded siphasher v1.0.3
+  Downloaded tauri-build v2.6.2
+  Downloaded tauri-codegen v2.6.2
+  Downloaded tendril v0.5.0
+  Downloaded tinyvec_macros v0.1.1
+  Downloaded typed-arena v2.0.2
+  Downloaded clap_builder v4.6.0
+  Downloaded muda v0.19.2
+  Downloaded schemars_derive v0.8.22
+  Downloaded serde-untagged v0.1.9
+  Downloaded serde_derive_internals v0.29.1
+  Downloaded sha2 v0.10.9
+  Downloaded shlex v1.3.0
+  Downloaded simd-adler32 v0.3.9
+  Downloaded smallvec v1.15.1
+  Downloaded tauri-runtime-wry v2.11.2
+  Downloaded toml_datetime v0.7.5+spec-1.1.0
+  Downloaded toml_writer v1.1.1+spec-1.1.0
+  Downloaded zerovec v0.11.6
+  Downloaded derive_more v2.1.1
+  Downloaded derive_more-impl v2.1.1
+  Downloaded icu_collections v2.2.0
+  Downloaded semver v1.0.28
+  Downloaded serde_derive v1.0.228
+  Downloaded serde_with_macros v3.20.0
+  Downloaded servo_arc v0.4.3
+  Downloaded tinystr v0.8.3
+  Downloaded toml_datetime v1.1.1+spec-1.1.0
+  Downloaded toml_parser v1.1.2+spec-1.1.0
+  Downloaded brotli-decompressor v5.0.0
+  Downloaded deranged v0.5.8
+  Downloaded png v0.17.16
+  Downloaded schemars v0.8.22
+  Downloaded selectors v0.36.1
+  Downloaded serde_core v1.0.228
+  Downloaded serde_yaml v0.9.34+deprecated
+  Downloaded socket2 v0.6.3
+  Downloaded softbuffer v0.4.8
+  Downloaded tinyvec v1.11.0
+  Downloaded toml v0.9.12+spec-1.1.0
+  Downloaded toml v1.1.2+spec-1.1.0
+  Downloaded tracing-core v0.1.36
+  Downloaded unic-common v0.9.0
+  Downloaded aho-corasick v1.1.4
+  Downloaded tauri-plugin-shell v2.3.5
+  Downloaded tray-icon v0.23.1
+  Downloaded chrono v0.4.44
+  Downloaded regex v1.12.3
+  Downloaded schemars v0.9.0
+  Downloaded schemars v1.2.1
+  Downloaded serde v1.0.228
+  Downloaded tauri-utils v2.9.2
+  Downloaded time v0.3.47
+  Downloaded typeid v1.0.3
+  Downloaded unic-ucd-ident v0.9.0
+  Downloaded rusqlite v0.31.0
+  Downloaded unic-char-property v0.9.0
+  Downloaded unic-char-range v0.9.0
+  Downloaded unic-ucd-version v0.9.0
+  Downloaded utf-8 v0.7.6
+  Downloaded urlpattern v0.3.0
+  Downloaded quick-xml v0.39.4
+  Downloaded serde_json v1.0.150
+  Downloaded unicode-ident v1.0.24
+  Downloaded unsafe-libyaml v0.2.11
+  Downloaded url v2.5.8
+  Downloaded serde_with v3.20.0
+  Downloaded typenum v1.20.0
+  Downloaded unicode-segmentation v1.13.2
+  Downloaded syn v2.0.117
+  Downloaded tauri v2.11.2
+  Downloaded tao v0.35.3
+  Downloaded regex-syntax v0.8.10
+  Downloaded unicode-normalization v0.1.25
+  Downloaded tracing v0.1.44
+  Downloaded brotli v8.0.2
+  Downloaded regex-automata v0.4.14
+  Downloaded windows_x86_64_msvc v0.48.5
+  Downloaded onig_sys v69.9.3
+  Downloaded windows_x86_64_msvc v0.52.6
+  Downloaded libc v0.2.186
+  Downloaded syntect v5.3.0
+  Downloaded tokio v1.52.3
+  Downloaded window-vibrancy v0.6.0
+  Downloaded windows-sys v0.59.0
+  Downloaded windows-sys v0.61.2
+  Downloaded windows-sys v0.60.2
+  Downloaded windows-sys v0.48.0
+  Downloaded libsqlite3-sys v0.28.0
+  Downloaded webview2-com-sys v0.38.2
+  Downloaded windows v0.61.3
+   Compiling proc-macro2 v1.0.106
+   Compiling quote v1.0.45
+   Compiling unicode-ident v1.0.24
+   Compiling serde_core v1.0.228
+   Compiling siphasher v1.0.3
+   Compiling phf_shared v0.13.1
+   Compiling fastrand v2.4.1
+   Compiling phf_generator v0.13.1
+   Compiling cfg-if v1.0.4
+   Compiling icu_properties_data v2.2.0
+   Compiling icu_normalizer_data v2.2.0
+   Compiling stable_deref_trait v1.2.1
+   Compiling windows-link v0.2.1
+   Compiling thiserror v2.0.18
+   Compiling zmij v1.0.21
+   Compiling syn v2.0.117
+   Compiling smallvec v1.15.1
+   Compiling parking_lot_core v0.9.12
+   Compiling phf_codegen v0.13.1
+   Compiling find-msvc-tools v0.1.9
+   Compiling strsim v0.11.1
+   Compiling serde v1.0.228
+   Compiling shlex v1.3.0
+   Compiling ident_case v1.0.1
+   Compiling cc v1.2.62
+   Compiling memchr v2.8.0
+   Compiling typeid v1.0.3
+   Compiling itoa v1.0.18
+   Compiling windows-sys v0.61.2
+   Compiling version_check v0.9.5
+   Compiling time-core v0.1.8
+   Compiling num-conv v0.2.2
+   Compiling erased-serde v0.4.10
+   Compiling thiserror v1.0.69
+   Compiling litemap v0.8.2
+   Compiling writeable v0.6.3
+   Compiling libc v0.2.186
+   Compiling synstructure v0.13.2
+   Compiling darling_core v0.23.0
+   Compiling utf8_iter v1.0.4
+   Compiling autocfg v1.5.1
+   Compiling windows_x86_64_msvc v0.52.6
+   Compiling scopeguard v1.2.0
+   Compiling anyhow v1.0.102
+   Compiling new_debug_unreachable v1.0.6
+   Compiling lock_api v0.4.14
+   Compiling zerofrom-derive v0.1.7
+   Compiling yoke-derive v0.8.2
+   Compiling serde_derive v1.0.228
+   Compiling zerovec-derive v0.11.3
+   Compiling displaydoc v0.2.5
+   Compiling zerofrom v0.1.8
+   Compiling yoke v0.8.2
+   Compiling thiserror-impl v2.0.18
+   Compiling phf_macros v0.13.1
+   Compiling zerovec v0.11.6
+   Compiling darling_macro v0.23.0
+   Compiling tinystr v0.8.3
+   Compiling darling v0.23.0
+   Compiling potential_utf v0.1.5
+   Compiling icu_locale_core v2.2.0
+   Compiling zerotrie v0.2.4
+   Compiling icu_collections v2.2.0
+   Compiling thiserror-impl v1.0.69
+   Compiling phf v0.13.1
+   Compiling icu_provider v2.2.0
+   Compiling string_cache_codegen v0.6.1
+   Compiling getrandom v0.4.2
+   Compiling precomputed-hash v0.1.1
+   Compiling serde_json v1.0.150
+   Compiling winnow v1.0.3
+   Compiling web_atoms v0.2.4
+   Compiling icu_properties v2.2.0
+   Compiling toml_parser v1.1.2+spec-1.1.0
+   Compiling icu_normalizer v2.2.0
+   Compiling serde_with_macros v3.20.0
+   Compiling parking_lot v0.12.5
+   Compiling serde_spanned v1.1.1
+   Compiling toml_writer v1.1.1+spec-1.1.0
+   Compiling ctor-proc-macro v0.0.7
+   Compiling idna_adapter v1.2.2
+   Compiling string_cache v0.9.0
+   Compiling semver v1.0.28
+   Compiling log v0.4.29
+   Compiling percent-encoding v2.3.2
+   Compiling dtoa v1.0.11
+   Compiling utf-8 v0.7.6
+   Compiling tendril v0.5.0
+   Compiling dtoa-short v0.3.5
+   Compiling form_urlencoded v1.2.2
+   Compiling uuid v1.23.1
+   Compiling idna v1.1.0
+   Compiling cssparser-macros v0.6.1
+   Compiling derive_more-impl v2.1.1
+   Compiling indexmap v1.9.3
+   Compiling aho-corasick v1.1.4
+   Compiling selectors v0.36.1
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling byteorder v1.5.0
+   Compiling regex-syntax v0.8.10
+   Compiling camino v1.2.2
+   Compiling unic-common v0.9.0
+   Compiling unic-char-range v0.9.0
+   Compiling powerfmt v0.2.0
+   Compiling windows-link v0.1.3
+   Compiling alloc-no-stdlib v2.0.4
+   Compiling deranged v0.5.8
+   Compiling alloc-stdlib v0.2.2
+   Compiling unic-char-property v0.9.0
+   Compiling unic-ucd-version v0.9.0
+   Compiling derive_more v2.1.1
+   Compiling toml v1.1.2+spec-1.1.0
+   Compiling regex-automata v0.4.14
+   Compiling markup5ever v0.38.0
+   Compiling cssparser v0.36.0
+   Compiling url v2.5.8
+   Compiling winapi-util v0.1.11
+   Compiling serde_derive_internals v0.29.1
+   Compiling servo_arc v0.4.3
+   Compiling equivalent v1.0.2
+   Compiling hashbrown v0.17.1
+   Compiling fnv v1.0.7
+   Compiling bitflags v2.11.1
+   Compiling schemars v0.8.22
+   Compiling bit-vec v0.8.0
+   Compiling hashbrown v0.12.3
+   Compiling rustc-hash v2.1.2
+   Compiling bit-set v0.8.0
+   Compiling schemars_derive v0.8.22
+   Compiling indexmap v2.14.0
+   Compiling regex v1.12.3
+   Compiling cfb v0.7.3
+   Compiling same-file v1.0.6
+   Compiling html5ever v0.38.0
+   Compiling time v0.3.47
+   Compiling unic-ucd-ident v0.9.0
+   Compiling brotli-decompressor v5.0.0
+   Compiling jsonptr v0.6.3
+   Compiling cargo-platform v0.1.9
+   Compiling quick-xml v0.39.4
+   Compiling dyn-clone v1.0.20
+   Compiling dunce v1.0.5
+   Compiling base64 v0.22.1
+   Compiling crc32fast v1.5.0
+   Compiling foldhash v0.2.0
+   Compiling bytes v1.11.1
+   Compiling dom_query v0.27.0
+   Compiling plist v1.9.0
+   Compiling http v1.4.0
+   Compiling brotli v8.0.2
+   Compiling cargo_metadata v0.19.2
+   Compiling json-patch v3.0.1
+   Compiling urlpattern v0.3.0
+   Compiling serde-untagged v0.1.9
+   Compiling walkdir v2.5.0
+   Compiling infer v0.19.0
+   Compiling windows-result v0.3.4
+   Compiling windows-strings v0.4.2
+   Compiling ctor v0.8.0
+   Compiling serde_with v3.20.0
+   Compiling windows-interface v0.59.3
+   Compiling windows-implement v0.60.2
+   Compiling vswhom-sys v0.1.3
+   Compiling glob v0.3.3
+   Compiling once_cell v1.21.4
+   Compiling windows-core v0.61.2
+   Compiling tauri-utils v2.9.2
+   Compiling windows-targets v0.52.6
+   Compiling heck v0.5.0
+   Compiling windows-sys v0.59.0
+   Compiling winreg v0.55.0
+   Compiling windows-threading v0.1.0
+   Compiling rustc_version v0.4.1
+   Compiling generic-array v0.14.7
+   Compiling toml_datetime v0.7.5+spec-1.1.0
+   Compiling winnow v0.7.15
+   Compiling pkg-config v0.3.33
+   Compiling option-ext v0.2.0
+   Compiling vswhom v0.1.0
+   Compiling dirs-sys v0.5.0
+   Compiling embed-resource v3.0.9
+   Compiling toml v0.9.12+spec-1.1.0
+   Compiling windows-future v0.2.1
+   Compiling windows-collections v0.2.0
+   Compiling windows-numerics v0.2.0
+   Compiling time-macros v0.2.27
+   Compiling typenum v1.20.0
+   Compiling simd-adler32 v0.3.9
+   Compiling windows v0.61.3
+   Compiling cargo_toml v0.22.3
+   Compiling tauri-winres v0.3.6
+   Compiling dirs v6.0.0
+   Compiling webview2-com-sys v0.38.2
+   Compiling raw-window-handle v0.6.2
+   Compiling crossbeam-utils v0.8.21
+   Compiling adler2 v2.0.1
+   Compiling miniz_oxide v0.8.9
+   Compiling tauri-build v2.6.2
+   Compiling dpi v0.1.2
+   Compiling cookie v0.18.1
+   Compiling flate2 v1.1.9
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling fdeflate v0.3.7
+   Compiling webview2-com-macros v0.8.1
+   Compiling windows-version v0.1.7
+   Compiling zerocopy v0.8.48
+   Compiling bitflags v1.3.2
+   Compiling pin-project-lite v0.2.17
+   Compiling unicode-segmentation v1.13.2
+   Compiling windows_x86_64_msvc v0.53.1
+   Compiling windows_x86_64_msvc v0.48.5
+   Compiling png v0.17.16
+   Compiling digest v0.10.7
+   Compiling crossbeam-channel v0.5.15
+   Compiling webview2-com v0.38.2
+   Compiling tauri v2.11.2
+   Compiling onig_sys v69.9.3
+   Compiling ahash v0.8.12
+   Compiling rustversion v1.0.22
+   Compiling once_cell_polyfill v1.70.2
+   Compiling utf8parse v0.2.2
+   Compiling tracing-core v0.1.36
+   Compiling wry v0.55.1
+   Compiling tauri-runtime v2.11.2
+   Compiling anstyle v1.0.14
+   Compiling cpufeatures v0.2.17
+   Compiling prettyplease v0.2.37
+   Compiling sha2 v0.10.9
+   Compiling anstyle-wincon v3.0.11
+   Compiling tracing v0.1.44
+   Compiling anstyle-parse v1.0.0
+   Compiling ico v0.5.0
+   Compiling tauri-plugin v2.6.2
+   Compiling anstyle-query v1.1.5
+   Compiling tauri-runtime-wry v2.11.2
+   Compiling tinyvec_macros v0.1.1
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling colorchoice v1.0.5
+   Compiling vcpkg v0.2.15
+   Compiling getrandom v0.3.4
+   Compiling anstream v1.0.0
+   Compiling libsqlite3-sys v0.28.0
+   Compiling tinyvec v1.11.0
+   Compiling tauri-plugin-shell v2.3.5
+   Compiling windows-targets v0.53.5
+   Compiling windows-targets v0.48.5
+   Compiling tauri-codegen v2.6.2
+   Compiling tao v0.35.3
+   Compiling softbuffer v0.4.8
+   Compiling keyboard-types v0.7.0
+   Compiling mio v1.2.0
+   Compiling terminal_size v0.4.4
+   Compiling serialize-to-javascript-impl v0.1.2
+   Compiling num-traits v0.2.19
+   Compiling jetscii v0.5.3
+   Compiling clap_lex v1.1.0
+   Compiling entities v1.0.1
+   Compiling comrak v0.52.0
+   Compiling clap_builder v4.6.0
+   Compiling serialize-to-javascript v0.1.2
+   Compiling muda v0.19.2
+   Compiling tokio v1.52.3
+   Compiling bon-macros v3.9.3
+   Compiling window-vibrancy v0.6.0
+   Compiling tauri-macros v2.6.2
+   Compiling windows-sys v0.48.0
+   Compiling windows-sys v0.60.2
+   Compiling unicode-normalization v0.1.25
+   Compiling onig v6.5.3
+   Compiling hashbrown v0.14.5
+   Compiling clap_derive v4.6.1
+   Compiling bincode v1.3.3
+   Compiling serde_repr v0.1.20
+   Compiling mime v0.3.17
+   Compiling clap v4.6.1
+   Compiling syntect v5.3.0
+   Compiling hashlink v0.9.1
+   Compiling caseless v0.2.2
+   Compiling dirs-sys v0.4.1
+   Compiling shared_child v1.1.1
+   Compiling bon v3.9.3
+   Compiling open v5.3.5
+   Compiling emojis v0.8.2
+   Compiling hengshi-value v0.1.0 (D:\a\STOCK-Dev\STOCK-Dev\src-tauri)
+   Compiling encoding_rs v0.8.35
+   Compiling os_pipe v1.2.3
+   Compiling ryu v1.0.23
+   Compiling fmt2io v1.0.0
+   Compiling fallible-iterator v0.3.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling unsafe-libyaml v0.2.11
+   Compiling finl_unicode v1.4.0
+   Compiling shell-words v1.1.1
+   Compiling typed-arena v2.0.2
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling rusqlite v0.31.0
+   Compiling chrono v0.4.44
+   Compiling dirs v5.0.1
+warning: unused variable: `mac_handle`
+  --> src\main.rs:52:17
+   |
+52 |             let mac_handle = handle.clone();
+   |                 ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_mac_handle`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `write_llm_config` is never used
+   --> src\commands.rs:551:4
+    |
+551 | fn write_llm_config(value: &serde_json::Value) -> Result<(), String> {
+    |    ^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `update_stock_score_from_llm` is never used
+   --> src\commands.rs:955:8
+    |
+955 | pub fn update_stock_score_from_llm(code: String, suggestion: String, risk_level: String) -> Result<String, String> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_export_msg` is never used
+    --> src\commands.rs:1105:8
+     |
+1105 | pub fn test_export_msg(message_id: i32, format: String) -> Result<String, String> {
+     |        ^^^^^^^^^^^^^^^
+
+warning: function `export_agent_message` is never used
+    --> src\commands.rs:1137:8
+     |
+1137 | pub fn export_agent_message(
+     |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `try_save_dialog` is never used
+    --> src\commands.rs:1226:4
+     |
+1226 | fn try_save_dialog(_app: &tauri::AppHandle, _default_name: &str, _format: &str) -> Option<std::path::PathBuf> {
+     |    ^^^^^^^^^^^^^^^
+
+warning: `hengshi-value` (bin "hengshi-value") generated 6 warnings (run `cargo fix --bin "hengshi-value" -p hengshi-value` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 5m 50s
+       Built [tauri_cli::build] application at: D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\hengshi-value.exe
+        Info [tauri_bundler::bundle] Patching D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\hengshi-value.exe with bundle type information: msi
+        Info [tauri_bundler::bundle::windows::msi] Verifying wix package
+ Downloading [tauri_bundler::utils::http_utils] https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip
+       Debug [ureq_proto::client] Call<Prepare>
+       Debug [ureq::run] GET https://github.com/******
+       Debug [ureq::unversioned::resolver] Resolved: ArrayVec { len: 1, arr: [140.82.114.4:443] }
+       Debug [ureq::unversioned::transport::tcp] Connected TcpStream to 140.82.114.4:443
+       Debug [rustls::client::hs] No cached session for DnsName("github.com")
+       Debug [rustls::client::hs] Not resuming any session
+       Debug [ureq::tls::rustls] Wrapped TLS
+       Debug [ureq_proto::client] Call<SendRequest>
+       Debug [ureq::run] Request { method: GET, uri: https://github.com/******, version: HTTP/1.1, headers: {"accept-encoding": "gzip", "user-agent": "tauri-bundler/2.9.2", "accept": "*/*", "host": "github.com"} }
+       Debug [rustls::client::hs] Using ciphersuite TLS13_AES_128_GCM_SHA256
+       Debug [rustls::client::tls13] Not resuming
+       Debug [rustls::client::tls13] TLS1.3 encrypted extensions: ServerExtensions { server_name_ack: (), unknown_extensions: {}, .. }
+       Debug [rustls::client::hs] ALPN protocol is None
+       Debug [ureq_proto::client] Call<RecvResponse>
+       Debug [ureq_proto::client::recvresp] Partial redirection response, insert fake connection: close
+       Debug [ureq_proto::client] Call<Redirect>
+       Debug [ureq::run] Response { status: 302, version: HTTP/1.1, headers: {"date": "Mon, 17 Aug 2026 16:09:20 GMT", "content-type": "text/html; charset=utf-8", "connection": "close", "location": "******", "<NOTICE>": "7 HEADERS ARE REDACTED"} }
+       Debug [ureq::pool] Close: PoolKey { scheme: "https", authority: github.com, proxy: None }
+       Debug [ureq_proto::client] Call<Prepare>
+       Debug [ureq::run] Redirect (302 Found): GET https://release-assets.githubusercontent.com/******
+       Debug [ureq::run] GET https://release-assets.githubusercontent.com/******
+       Debug [ureq::unversioned::resolver] Resolved: ArrayVec { len: 4, arr: [185.199.110.133:443, 185.199.111.133:443, 185.199.108.133:443, 185.199.109.133:443] }
+       Debug [ureq::unversioned::transport::tcp] Connected TcpStream to 185.199.110.133:443
+       Debug [rustls::client::hs] No cached session for DnsName("release-assets.githubusercontent.com")
+       Debug [rustls::client::hs] Not resuming any session
+       Debug [ureq::tls::rustls] Wrapped TLS
+       Debug [ureq_proto::client] Call<SendRequest>
+       Debug [ureq::run] Request { method: GET, uri: https://release-assets.githubusercontent.com/******, version: HTTP/1.1, headers: {"accept-encoding": "gzip", "user-agent": "tauri-bundler/2.9.2", "accept": "*/*", "host": "release-assets.githubusercontent.com"} }
+       Debug [rustls::client::hs] Using ciphersuite TLS13_AES_128_GCM_SHA256
+       Debug [rustls::client::tls13] Not resuming
+       Debug [rustls::client::tls13] TLS1.3 encrypted extensions: ServerExtensions { server_name_ack: (), unknown_extensions: {}, .. }
+       Debug [rustls::client::hs] ALPN protocol is None
+       Debug [ureq_proto::client] Call<RecvResponse>
+       Debug [ureq_proto::client] Call<RecvBody>
+       Debug [ureq::run] Response { status: 200, version: HTTP/1.1, headers: {"connection": "keep-alive", "content-length": "41297555", "server": "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0", "date": "Mon, 17 Aug 2026 16:10:48 GMT", "content-type": "application/octet-stream", "<NOTICE>": "18 HEADERS ARE REDACTED"} }
+       Debug [ureq_proto::client] Call<Cleanup>
+       Debug [ureq::pool] Return to pool: PoolKey { scheme: "https", authority: release-assets.githubusercontent.com, proxy: None }
+        Info [tauri_bundler::utils::http_utils] validating hash
+        Info [tauri_bundler::bundle::windows::msi] extracting WIX
+        Info [tauri_bundler::bundle::windows::msi] Target: x64
+     Running [tauri_bundler::bundle::windows::msi] candle for "D:\\a\\STOCK-Dev\\STOCK-Dev\\src-tauri\\target\\release\\wix\\x64\\main.wxs"
+     Running [tauri_bundler::utils] Command `C:\Users\runneradmin\AppData\Local\tauri\WixTools314\candle.exe  -arch x64 D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs -dSourceDir=D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\hengshi-value.exe`
+Windows Installer XML Toolset Compiler version 3.14.1.8722
+Copyright (c) .NET Foundation and contributors. All rights reserved.
+
+main.wxs
+     Running [tauri_bundler::bundle::windows::msi] light to produce D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\bundle\msi\衡势价值_0.1.0_x64_en-US.msi
+     Running [tauri_bundler::utils] Command `C:\Users\runneradmin\AppData\Local\tauri\WixTools314\light.exe  -ext C:\Users\runneradmin\AppData\Local\tauri\WixTools314\WixUtilExtension.dll -ext C:\Users\runneradmin\AppData\Local\tauri\WixTools314\WixUIExtension.dll -o D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\output.msi -cultures:en-us -loc D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\locale.wxl *.wixobj`
+Windows Installer XML Toolset Linker version 3.14.1.8722
+Copyright (c) .NET Foundation and contributors. All rights reserved.
+
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(23) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(23) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(102) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(105) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(209) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(155) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(68) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(15) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(98) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(112) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(131) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(151) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(61) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(64) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(96) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(122) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+D:\a\STOCK-Dev\STOCK-Dev\src-tauri\target\release\wix\x64\main.wxs(142) : error LGHT0311 : A string was provided with characters that are not available in the specified database code page '1252'. Either change these characters to ones that exist in the database's code page, or update the database's code page by modifying one of the following attributes: Product/@Codepage, Module/@Codepage, Patch/@Codepage, PatchCreation/@Codepage, or WixLocalization/@Codepage.
+failed to bundle project `failed to run C:\Users\runneradmin\AppData\Local\tauri\WixTools314\light.exe`
+       Error [tauri_cli_node] failed to bundle project `failed to run C:\Users\runneradmin\AppData\Local\tauri\WixTools314\light.exe`
